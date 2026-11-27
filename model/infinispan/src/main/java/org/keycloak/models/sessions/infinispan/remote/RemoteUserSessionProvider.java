@@ -19,9 +19,6 @@ package org.keycloak.models.sessions.infinispan.remote;
 
 import java.lang.invoke.MethodHandles;
 import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,7 +35,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -60,13 +56,11 @@ import org.keycloak.models.sessions.infinispan.remote.transaction.ClientSessionC
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.UserSessionTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionExpirationPredicates;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
 
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.Constants.SESSION_NOTE_LIGHTWEIGHT_USER;
@@ -274,15 +268,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void migrate(String modelVersion) {
-        if ("25.0.0".equals(modelVersion)) {
-            migrateUserSessions(true);
-            migrateUserSessions(false);
-        }
-
-    }
-
-    @Override
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
         return readOnlyStream(realm, true);
     }
@@ -335,57 +320,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
                 .flatMap(entity -> ImmutableSession.copyOf(session, entity, expiration, clientSessionCache, batchSize));
     }
 
-    private void migrateUserSessions(boolean offline) {
-        log.info("Migrate user sessions from database to the remote cache");
-
-        List<String> userSessionIds = Collections.synchronizedList(new ArrayList<>(batchSize));
-        List<Map.Entry<String, String>> clientSessionIds = Collections.synchronizedList(new ArrayList<>(batchSize));
-        boolean hasSessions;
-        do {
-            hasSessions = migrateUserSessionBatch(session.getKeycloakSessionFactory(), offline, userSessionIds, clientSessionIds);
-        } while (hasSessions);
-
-        log.info("All sessions migrated.");
-    }
-
-    private boolean migrateUserSessionBatch(KeycloakSessionFactory factory, boolean offline, List<String> userSessionBuffer, List<Map.Entry<String, String>> clientSessionBuffer) {
-        var userSessionCache = getUserSessionTransaction(offline).getCache();
-        var clientSessionCache = getClientSessionTransaction(offline).getCache();
-
-        log.infof("Migrating %s user(s) session(s) from database.", batchSize);
-
-        return KeycloakModelUtils.runJobInTransactionWithResult(factory, kcSession -> {
-            var database = kcSession.getProvider(UserSessionPersisterProvider.class);
-            var stage = CompletionStages.aggregateCompletionStage();
-            database.loadUserSessionsStream(-1, batchSize, offline, "")
-                    .forEach(userSessionModel -> {
-                        var userSessionEntity = RemoteUserSessionEntity.createFromModel(userSessionModel);
-                        stage.dependsOn(userSessionCache.putIfAbsentAsync(userSessionModel.getId(), userSessionEntity));
-                        userSessionBuffer.add(userSessionModel.getId());
-                        for (var clientSessionModel : userSessionModel.getAuthenticatedClientSessions().values()) {
-                            var clientSessionKey = new ClientSessionKey(userSessionModel.getId(), clientSessionModel.getClient().getId());
-                            clientSessionBuffer.add(Map.entry(clientSessionKey.userSessionId(), clientSessionKey.clientId()));
-                            var clientSessionEntity = RemoteAuthenticatedClientSessionEntity.createFromModel(clientSessionKey, clientSessionModel);
-                            stage.dependsOn(clientSessionCache.putIfAbsentAsync(clientSessionKey, clientSessionEntity));
-                        }
-                    });
-            CompletionStages.join(stage.freeze());
-
-            if (userSessionBuffer.isEmpty() && clientSessionBuffer.isEmpty()) {
-                return false;
-            }
-
-            log.infof("%s user(s) session(s) stored in the remote cache. Removing them from database.", userSessionBuffer.size());
-
-            userSessionBuffer.forEach(s -> database.removeUserSession(s, offline));
-            userSessionBuffer.clear();
-
-            clientSessionBuffer.forEach(e -> database.removeClientSession(e.getKey(), e.getValue(), offline));
-            clientSessionBuffer.clear();
-
-            return true;
-        });
-    }
 
     private UserSessionUpdater getUserSession(RealmModel realm, String id, boolean offline) {
         if (id == null) {

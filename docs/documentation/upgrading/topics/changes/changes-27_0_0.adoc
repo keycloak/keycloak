@@ -947,6 +947,34 @@ The internal Infinispan classes that only supported this API have been removed a
 This includes the `AuthenticationSessionAuthNoteUpdateEvent` cluster event, the site-related fields of `WrapperClusterEvent`, and the `siteId` field of `SessionClusterEvent`.
 These classes are not part of the supported SPI.
 
+=== `UserSessionPersisterProvider` method removed and default methods made abstract
+// https://github.com/keycloak/keycloak/issues/55097
+
+The following unused method has been removed from the `UserSessionPersisterProvider` interface in the `keycloak-model-storage-private` module:
+
+* `loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline, String lastUserSessionId)`
+
+This method was only used to load all sessions from the database in bulk, and no longer has any callers.
+The named queries `findUserSessionsOrderedById` and `findClientSessionsOrderedByIdInterval` that supported it have been removed as well.
+For read-only access to sessions in a single realm, use `readOnlyUserSessionStream(RealmModel realm, boolean offline)` instead.
+Unlike the removed method, it excludes sessions past the idle timeout and does not provide pagination or mutable session models.
+
+The following method previously had a default implementation that delegated to other methods.
+The default implementation has been removed, and the method is now abstract:
+
+* `removeUserSessions(RealmModel realm)`
+
+The following methods previously had a default implementation that threw an exception.
+The default implementations have been removed, and the methods are now abstract:
+
+* `findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline)`
+* `loadUserSessionsStreamByBrokerSessionId(RealmModel realm, String brokerSessionId, boolean offline)`
+
+The method `removeUserSessions(RealmModel realm, boolean offline)` was never called by {project_name} and has been removed from the interface.
+
+If you have a custom implementation of `UserSessionPersisterProvider` from the `keycloak-model-storage-private` module, remove the `@Override` of the removed methods, and implement the methods that are now abstract.
+Note that `removeUserSessions(RealmModel realm)` previously called `removeUserSessions(realm, true)` and `removeUserSessions(realm, false)`, so your implementation needs to remove both offline and online sessions.
+
 === Deprecated single-token refresh-token methods removed from `AuthenticatedClientSessionModel`
 // https://github.com/keycloak/keycloak/issues/55096
 

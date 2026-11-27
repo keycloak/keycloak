@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -53,12 +52,9 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.session.PersistentUserSessionAdapter;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.JpaChangesPerformer;
-import org.keycloak.models.sessions.infinispan.changes.MergedUpdate;
 import org.keycloak.models.sessions.infinispan.changes.PersistentSessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
-import org.keycloak.models.sessions.infinispan.changes.SessionUpdatesList;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
@@ -76,19 +72,14 @@ import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.SessionExpirationPredicates;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 
-import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.AsyncCache;
 import org.infinispan.commons.api.BasicCache;
-import org.infinispan.commons.util.ByRef;
 import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.infinispan.factories.ComponentRegistry;
-import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
@@ -924,90 +915,6 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                     .forEach(stage::dependsOn);
             CompletionStages.join(stage.freeze());
         }
-    }
-
-    /**
-     * Copy over all sessions in Infinispan to the persistent user sessions in the database.
-     * This method is public so people can use it to build their custom migrations or re-import sessions when necessary
-     * in a future version of Keycloak.
-     */
-    @Deprecated(since = "26.4", forRemoval = true)
-    public void migrateNonPersistentSessionsToPersistentSessions() {
-        var sessionCache = sessionTx.getCache(false);
-        if (sessionCache == null) {
-            return; // use-caches is disabled
-        }
-        var clientSessionCache = clientSessionTx.getCache(false);
-        JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName());
-        JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName());
-        AtomicInteger currentBatch = new AtomicInteger(0);
-        var persistence = ComponentRegistry.componentOf(sessionCache, PersistenceManager.class);
-        if (persistence != null && !persistence.getStoresAsString().isEmpty()) {
-            ByRef<Throwable> ref = ByRef.create(null);
-            Flowable.fromPublisher(persistence.<String, SessionEntityWrapper<UserSessionEntity>>publishEntries(true, false))
-                    .blockingSubscribe(e -> processEntryFromCache(e.getValue(), userSessionPerformer, clientSessionPerformer, currentBatch), ref::set);
-            if (ref.get() != null) {
-                throw new RuntimeException("Unable to migrate sessions", ref.get());
-            }
-        } else {
-            // Usually we assume sessions are stored in a persistence. To be extra safe, iterate over local sessions if no persistent is available.
-            sessionCache.forEach((key, value) -> processEntryFromCache(value, userSessionPerformer, clientSessionPerformer, currentBatch));
-        }
-        flush(userSessionPerformer, clientSessionPerformer);
-        // Clear existing sessions as the IDs of the client sessions have changed.
-        sessionCache.clear();
-        clientSessionCache.clear();
-        // Even though offline sessions haven't been migrated, they are cleared as the IDs of the client sessions have changed. It is safe to clear them as they are already stored in the database.
-        sessionTx.getCache(true).clear();
-        clientSessionTx.getCache(true).clear();
-        log.infof("Migrated %d user sessions total.", currentBatch.intValue());
-    }
-
-    /**
-     * When calling this, ensure that the cache doesn't contain entries for user or client sessions that are already contained in the database.
-     * Such entries should first be cleared from the cache before this is being called.
-     * As this is assumed to run once during the upgrade to Keycloak 25, this should be safe to assume.
-     */
-    private void processEntryFromCache(SessionEntityWrapper<UserSessionEntity> sessionEntityWrapper, JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer, JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer, AtomicInteger count) {
-        RealmModel realm = session.realms().getRealm(sessionEntityWrapper.getEntity().getRealmId());
-        if (realm == null) {
-            // ignoring old and unknown realm found in the session
-            return;
-        }
-        var clientSessionCache = clientSessionTx.getCache(false);
-        sessionEntityWrapper.getEntity().getClientSessions().forEach(clientId -> {
-            var key = new EmbeddedClientSessionKey(sessionEntityWrapper.getEntity().getId(), clientId);
-            SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(key);
-            if (clientSession != null) {
-                // TODO [pruivo] [KC27] Remove!
-                // This is necessary because client sessions created by a KC version < 22 do not have clientId set within the entity.
-                if (clientSession.getEntity().getClientId() == null) {
-                    clientSession.getEntity().setClientId(clientId);
-                }
-                clientSession.getEntity().setUserSessionId(sessionEntityWrapper.getEntity().getId());
-                clientSession.getEntity().setUserId(sessionEntityWrapper.getEntity().getUser());
-                MergedUpdate<AuthenticatedClientSessionEntity> merged = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), clientSession, 1, 1);
-                clientSessionPerformer.registerChange(Map.entry(key, new SessionUpdatesList<>(realm, clientSession)), merged);
-            }
-        });
-        MergedUpdate<UserSessionEntity> merged = MergedUpdate.computeUpdate(Collections.singletonList(Tasks.addIfAbsentSync()), sessionEntityWrapper, 1, 1);
-        userSessionPerformer.registerChange(Map.entry(sessionEntityWrapper.getEntity().getId(), new SessionUpdatesList<>(realm, sessionEntityWrapper)), merged);
-        if (count.incrementAndGet() % 100 == 0) {
-            flush(userSessionPerformer, clientSessionPerformer);
-        }
-        if (count.intValue() % 1000 == 0) {
-            log.infof("Migrated %d user sessions total, continuing...", count.intValue());
-        }
-    }
-
-    private <E extends SessionEntity, K> void flush(JpaChangesPerformer<K, E> userSessionsPerformer, JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
-                s -> {
-                    userSessionsPerformer.write(s);
-                    clientSessionPerformer.write(s);
-                });
-        userSessionsPerformer.clear();
-        clientSessionPerformer.clear();
     }
 
     @Override

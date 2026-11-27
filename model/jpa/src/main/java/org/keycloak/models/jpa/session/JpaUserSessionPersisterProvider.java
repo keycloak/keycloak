@@ -20,7 +20,6 @@ package org.keycloak.models.jpa.session;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -466,16 +465,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                         Collectors.mapping(JpaSessionUtil::getClientId, Collectors.filtering(Objects::nonNull, Collectors.toSet()))));
     }
 
-    public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                           String lastUserSessionId) {
-        String offlineStr = offlineToString(offline);
-
-        TypedQuery<PersistentUserSessionEntity> query = paginateQuery(em.createNamedQuery("findUserSessionsOrderedById", PersistentUserSessionEntity.class)
-            .setParameter("offline", offlineStr)
-            .setParameter("lastSessionId", lastUserSessionId), firstResult, maxResults);
-
-        return loadUserSessionsWithClientSessions(query, offlineStr);
-    }
 
     @Override
     public AuthenticatedClientSessionModel loadClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline) {
@@ -646,42 +635,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 }).map(UserSessionModel.class::cast));
     }
 
-    /**
-     * The IDs of user sessions returned by the query is taken as limits, and all client sessions are loaded that belong
-     * to user sessions whose ID is in between the minimum and maximum ID from this result.
-     */
-    private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr) {
-        List<PersistentUserSessionAdapter> userSessionAdapters = closing(query.getResultStream()
-                .map(this::toAdapter)
-                .filter(Objects::nonNull))
-                .toList();
-
-        if (userSessionAdapters.isEmpty()) {
-            return Stream.of();
-        }
-
-        Map<String, OfflineUserSessionModel> sessionsById = userSessionAdapters.stream()
-                .collect(Collectors.toMap(UserSessionModel::getId, Function.identity()));
-
-        Set<String> removedClientUUIDs = new HashSet<>();
-
-        TypedQuery<PersistentClientSessionEntity> queryClientSessions;
-        String fromUserSessionId = userSessionAdapters.get(0).getId();
-        String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();
-
-        queryClientSessions = em.createNamedQuery("findClientSessionsOrderedByIdInterval", PersistentClientSessionEntity.class);
-        queryClientSessions.setParameter("offline", offlineStr);
-        queryClientSessions.setParameter("fromSessionId", fromUserSessionId);
-        queryClientSessions.setParameter("toSessionId", toUserSessionId);
-
-        processClientSessions(sessionsById, removedClientUUIDs, queryClientSessions);
-
-        removedClientUUIDs.forEach(this::onClientRemoved);
-
-        logger.tracef("Loaded %d user sessions (offline=%s, sessionIds=%s)", userSessionAdapters.size(), offlineStr, sessionsById.keySet());
-
-        return userSessionAdapters.stream().map(UserSessionModel.class::cast);
-    }
 
     private void processClientSessions(Map<String, OfflineUserSessionModel> sessionsById, Set<String> removedClientUUIDs, TypedQuery<PersistentClientSessionEntity> queryClientSessions) {
         closing(queryClientSessions.getResultStream()).forEach(clientSession -> {
@@ -896,18 +849,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         Number n = (Number) query.getSingleResult();
         return n.intValue();
-    }
-
-    @Override
-    public void removeUserSessions(RealmModel realm, boolean offline) {
-        em.createNamedQuery("deleteClientSessionsByRealmSessionType")
-                .setParameter("realmId", realm.getId())
-                .setParameter("offline", offlineToString(offline))
-                .executeUpdate();
-        em.createNamedQuery("deleteUserSessionsByRealmSessionType")
-                .setParameter("realmId", realm.getId())
-                .setParameter("offline", offlineToString(offline))
-                .executeUpdate();
     }
 
     @Override
