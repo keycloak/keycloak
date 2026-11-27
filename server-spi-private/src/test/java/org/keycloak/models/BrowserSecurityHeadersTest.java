@@ -42,6 +42,15 @@ public class BrowserSecurityHeadersTest {
         assertParsedDirectives("frame-src 'custom-frame-src'; frame-ancestors 'custom-frame-ancestors'; object-src 'none'; style-src 'self';");
         assertParsedDirectives("frame-src 'custom-frame-src'; frame-ancestors 'custom-frame-ancestors'; object-src 'none'; sandbox;");
         assertEquals("frame-src 'custom-frame-src'; sandbox;", ContentSecurityPolicyBuilder.create("frame-src   'custom-frame-src' ; sandbox ;  ").build());
+        // directive names are case-insensitive and the first of a duplicate directive wins
+        assertEquals("frame-src 'none'; object-src 'none';", ContentSecurityPolicyBuilder.create("Frame-Src 'none'; frame-src localhost; object-src 'none';").build());
+    }
+
+    @Test
+    public void addSourceToNoneTest() {
+        assertEquals("frame-src localhost; frame-ancestors https://example.com;",
+                ContentSecurityPolicyBuilder.create("frame-src 'none'; frame-ancestors 'NONE';").addFrameSrc("localhost").addFrameAncestors("https://example.com").build());
+        assertEquals("frame-src 'self' localhost;", ContentSecurityPolicyBuilder.create("FRAME-SRC 'self';").addFrameSrc("localhost").build());
     }
 
     @Test
