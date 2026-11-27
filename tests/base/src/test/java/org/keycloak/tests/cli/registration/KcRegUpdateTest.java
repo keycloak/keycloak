@@ -36,19 +36,21 @@ class KcRegUpdateTest extends AbstractRegCliTest {
             loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
 
 
-            // create an object so we can update it
-            KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s client_id=my_client");
+            // create an object so we can update it (OIDC assigns client_id)
+            KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s client_name=my_client");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
             OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
-            Assertions.assertEquals("my_client", client.getClientId(), "clientId");
+            Assertions.assertNotNull(client.getClientId(), "clientId");
+            String clientId = client.getClientId();
+            Assertions.assertEquals("my_client", client.getClientName(), "client_name");
             Assertions.assertTrue(client.getRedirectUris() == null || client.getRedirectUris().isEmpty(), "redirect_uris is empty");
 
 
             // Merge update
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o " +
+            exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o " +
                         " -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
@@ -59,7 +61,7 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // Another merge update - test deleting an attribute, deleting a list item and adding a list item
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -d redirect_uris -s grant_types+=authorization_code -s grant_types+=refresh_token -d grant_types[0]");
+            exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o -d redirect_uris -s grant_types+=authorization_code -s grant_types+=refresh_token -d grant_types[0]");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
@@ -71,7 +73,7 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // check that using an invalid attribute key is not ignored
-            exe = execute("update my_client --nonexisting --config '" + configFile.getName() + "'");
+            exe = execute("update " + clientId + " --nonexisting --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 2, 0, 3);
             Assertions.assertEquals("Unknown option: '--nonexisting'", exe.stderrLines().get(0), "error message");
@@ -79,7 +81,7 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // try use removed endpoint
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s client_name=x -e default");
+            exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o -s client_name=x -e default");
 
             assertExitCodeAndStreamSizes(exe, 2, 0, 1);
             Assertions.assertTrue(exe.stderrLines().get(0).contains("no longer supported")
@@ -89,8 +91,8 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
             // test overwrite from file
             exe = KcRegExec.newBuilder()
-                    .argsLine("update my_client --config '" + configFile.getName() +
-                            "' -o  -s client_id=my_client -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]' -f -")
+                    .argsLine("update " + clientId + " --config '" + configFile.getName() +
+                            "' -o -s client_id=" + clientId + " -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]' -f -")
                     .stdin(new ByteArrayInputStream("{ \"client_name\": \"From File\" }".getBytes()))
                     .execute();
 
@@ -104,7 +106,7 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
             // test using merge with file
             exe = KcRegExec.newBuilder()
-                    .argsLine("update my_client --config '" + configFile.getName() +
+                    .argsLine("update " + clientId + " --config '" + configFile.getName() +
                             "' -o -s client_name=Merged -m -f -")
                     .stdin(new ByteArrayInputStream("{ \"client_uri\": \"http://localhost:8980/myapp\" }".getBytes()))
                     .execute();
@@ -120,11 +122,11 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
             // remove registration access token
             exe = execute("config registration-token --config '" + configFile.getName() + "' --server " + serverUrl +
-                    " --realm " + realm + " --client my_client -d");
+                    " --realm " + realm + " --client " + clientId + " -d");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            Assertions.assertNull(handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get("my_client"), "my_client registration token");
+            Assertions.assertNull(handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get(clientId), "registration token removed");
         }
     }
 }

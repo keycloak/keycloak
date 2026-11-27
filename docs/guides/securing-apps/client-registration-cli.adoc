@@ -18,6 +18,7 @@ To allow a particular user to use `Client Registration CLI`, the {project_name} 
 ====
 The `kcreg` CLI tool uses the OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`).
 The optional `-e` / `--endpoint` flag accepts only `oidc`.
+The OpenID Connect registration endpoint assigns `client_id`; do not set it on create.
 For Keycloak JSON client representations or SAML metadata, use the Admin REST API or `kcadm` instead.
 ====
 
@@ -114,7 +115,7 @@ For example, on:
 [options="npwrap",subs="attributes+"]
 ----
 $ kcreg.sh config credentials --server http://localhost:8080 --realm demo --user user --client reg-cli
-$ kcreg.sh create -s client_id=my_client -s 'redirect_uris=["http://localhost:8980/myapp/*"]'
+$ kcreg.sh create -s client_name=my_client -s 'redirect_uris=["http://localhost:8980/myapp/*"]'
 $ kcreg.sh get my_client
 ----
 * Windows:
@@ -122,7 +123,7 @@ $ kcreg.sh get my_client
 [options="npwrap",subs="attributes+"]
 ----
 c:\> kcreg config credentials --server http://localhost:8080 --realm demo --user user --client reg-cli
-c:\> kcreg create -s client_id=my_client -s "redirect_uris=[\"http://localhost:8980/myapp/*\"]"
+c:\> kcreg create -s client_name=my_client -s "redirect_uris=[\"http://localhost:8980/myapp/*\"]"
 c:\> kcreg get my_client
 ----
 +
@@ -206,28 +207,28 @@ For example, on:
 [options="nowrap"]
 ----
 $ kcreg.sh config initial-token $TOKEN
-$ kcreg.sh create -s client_id=myclient
+$ kcreg.sh create -s client_name=myclient
 ----
 
 or
 
 [options="nowrap"]
 ----
-$ kcreg.sh create -s client_id=myclient -t $TOKEN
+$ kcreg.sh create -s client_name=myclient -t $TOKEN
 ----
 
 * Windows:
 [options="nowrap"]
 ----
 c:\> kcreg config initial-token %TOKEN%
-c:\> kcreg create -s client_id=myclient
+c:\> kcreg create -s client_name=myclient
 ----
 
 or
 
 [options="nowrap"]
 ----
-c:\> kcreg create -s client_id=myclient -t %TOKEN%
+c:\> kcreg create -s client_name=myclient -t %TOKEN%
 ----
 
 When using an Initial Access Token, the server response includes a newly issued Registration Access Token. Any subsequent operation for that client needs to be performed by authenticating with that token, which is only valid for that client.
@@ -249,12 +250,12 @@ The following example shows how to read a JSON file, override any client id it m
 * Linux:
 [options="nowrap"]
 ----
-$ kcreg.sh create -f client-template.json -s client_id=myclient -s client_uri=/myclient -s 'redirect_uris=["/myclient/*"]' -o
+$ kcreg.sh create -f client-template.json -s client_name=myclient -s client_uri=/myclient -s 'redirect_uris=["/myclient/*"]' -o
 ----
 * Windows:
 [options="nowrap"]
 ----
-C:\> kcreg create -f client-template.json -s client_id=myclient -s client_uri=/myclient -s "redirect_uris=[\"/myclient/*\"]" -o
+C:\> kcreg create -f client-template.json -s client_name=myclient -s client_uri=/myclient -s "redirect_uris=[\"/myclient/*\"]" -o
 ----
 
 Run the [command]`kcreg create --help` for more information about the [command]`kcreg create` command.

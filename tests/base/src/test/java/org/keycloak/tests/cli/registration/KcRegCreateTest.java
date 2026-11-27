@@ -51,7 +51,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             // use initial token of another realm with server, and realm override
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s client_id=my_first_client -t " + token);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s client_name=my_first_client -t " + token);
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
         }
@@ -66,7 +66,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             String token = issueInitialAccessToken("test");
 
             KcRegExec exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() +
-                    " --realm test -e saml2 -s client_id=saml2_removed_client -t " + token);
+                    " --realm test -e saml2 -s client_name=saml2_removed_client -t " + token);
 
             Assertions.assertNotEquals(0, exe.exitCode(), "exitCode != 0");
             Assertions.assertTrue(exe.stderrString().contains("no longer supported") || exe.stderrString().contains("Endpoint not supported: saml2"), "error message: " + exe.stderrString());
@@ -97,7 +97,6 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             // create configuration from file using stdin redirect ... output an object
             String content = "{\n" +
-                    "        \"client_id\": \"my_client\",\n" +
                     "        \"redirect_uris\": [\"http://localhost:8980/myapp/*\"],\n" +
                     "        \"grant_types\": [\"authorization_code\", \"client_credentials\", \"refresh_token\"],\n" +
                     "        \"response_types\": [\"code\", \"none\"],\n" +
@@ -112,7 +111,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 assertExitCodeAndStdErrSize(exe, 0, 2);
 
                 OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
-                Assertions.assertEquals("my_client", client.getClientId(), "clientId");
+                Assertions.assertNotNull(client.getClientId(), "clientId");
                 Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirect_uris");
                 Assertions.assertEquals(Arrays.asList("authorization_code", "client_credentials", "refresh_token"), client.getGrantTypes(), "grant_types");
                 Assertions.assertEquals(Arrays.asList("code", "none"), client.getResponseTypes(), "response_types");
@@ -121,13 +120,13 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
                 // create configuration from file as a template and override attributes ... output an object
                 exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() +
-                        "' -s client_id=my_client2 -s 'redirect_uris=[\"http://localhost:8980/myapp2/*\"]'" +
+                        "' -s 'redirect_uris=[\"http://localhost:8980/myapp2/*\"]'" +
                         " -s 'client_name=My Client App II' -s client_uri=http://localhost:8980/myapp2");
 
                 assertExitCodeAndStdErrSize(exe, 0, 2);
 
                 OIDCClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
-                Assertions.assertEquals("my_client2", client2.getClientId(), "clientId");
+                Assertions.assertNotNull(client2.getClientId(), "clientId");
                 Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp2/*"), client2.getRedirectUris(), "redirect_uris");
                 Assertions.assertEquals("My Client App II", client2.getClientName(), "client_name");
                 Assertions.assertEquals("http://localhost:8980/myapp2", client2.getClientUri(), "client_uri");
@@ -141,16 +140,19 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             }
 
             // simple create, output an id
-            exe = execute("create --insecure --config '" + configFile.getName() + "' -i -s client_id=my_client3");
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -i -s client_name=my_client3");
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 2);
-            Assertions.assertEquals("my_client3", exe.stdoutLines().get(0), "only clientId returned");
+            String generatedClientId = exe.stdoutLines().get(0);
+            Assertions.assertFalse(generatedClientId.isBlank(), "only clientId returned");
 
             // simple create, default output
-            exe = execute("create --insecure --config '" + configFile.getName() + "' -s client_id=my_client4");
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -s client_name=my_client4");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
-            Assertions.assertEquals("Registered new client with client_id 'my_client4'", exe.stderrLines().get(exe.stderrLines().size() - 1), "only clientId returned");
+            String registeredMsg = exe.stderrLines().get(exe.stderrLines().size() - 1);
+            Assertions.assertTrue(registeredMsg.startsWith("Registered new client with client_id '"), "registered message: " + registeredMsg);
+            Assertions.assertTrue(registeredMsg.endsWith("'"), "registered message: " + registeredMsg);
 
 
 

@@ -221,7 +221,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
         out.println("  " + PROMPT + " " + CMD + " create -f my_client.json -s client_name=my_client2 -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]'");
         out.println();
         out.println("Creating a client using an Initial Access Token - you'll be prompted for a token:");
-        out.println("  " + PROMPT + " " + CMD + " create -s client_id=my_client2 -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]' -t -");
+        out.println("  " + PROMPT + " " + CMD + " create -s client_name=my_client2 -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]' -t -");
         out.println();
         out.println("Creating a client (explicit -e oidc is optional):");
         out.println("  " + PROMPT + " " + CMD + " create -e oidc -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]'");

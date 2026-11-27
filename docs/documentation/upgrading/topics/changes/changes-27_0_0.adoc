@@ -410,7 +410,8 @@ The `default` client registration provider remains deprecated and is not affecte
 The Client Registration CLI (`kcreg`) now uses the OpenID Connect dynamic client registration endpoint when `-e` / `--endpoint` is omitted.
 The `-e` option accepts only `oidc` (or `openid-connect`).
 Values such as `default` and `saml2` are rejected.
-Use OIDC JSON field names (for example `client_id`, `redirect_uris`) with `kcreg`.
+Use OIDC JSON field names (for example `client_name`, `redirect_uris`) with `kcreg`.
+Do not set `client_id` on create; the OpenID Connect registration endpoint assigns it.
 For Keycloak JSON client representations, use the Admin REST API or `kcadm`.
 
 === SAML Entity Descriptor client registration endpoint removed

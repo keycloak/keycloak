@@ -421,33 +421,34 @@ public class KcRegTest extends AbstractRegCliTest {
 
 
 
-            exe = execute("create --config '" + configFile.getName() + "' -s client_id=test-client -o");
+            exe = execute("create --config '" + configFile.getName() + "' -s client_name=test-client -o");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
+            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+            Assertions.assertNotNull(client.getClientId(), "clientId");
+            String clientId = client.getClientId();
+            Assertions.assertEquals("test-client", client.getClientName(), "client_name");
+            Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
+
             // check changes to config file
             ConfigData config2 = handler.loadConfig();
-            assertFieldsEqualWithExclusions(config1, config2, "endpoints." + serverUrl + ".master.clients.test-client");
+            assertFieldsEqualWithExclusions(config1, config2, "endpoints." + serverUrl + ".master.clients." + clientId);
 
             // check that registration access token is now set
-            Assertions.assertNotNull(config2.sessionRealmConfigData().getClients().get("test-client"));
-
-
-            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
-            Assertions.assertEquals("test-client", client.getClientId(), "clientId");
-            Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
-            Assertions.assertEquals(config2.sessionRealmConfigData().getClients().get("test-client"), client.getRegistrationAccessToken(), "registrationAccessToken in returned json same as in config");
+            Assertions.assertNotNull(config2.sessionRealmConfigData().getClients().get(clientId));
+            Assertions.assertEquals(config2.sessionRealmConfigData().getClients().get(clientId), client.getRegistrationAccessToken(), "registrationAccessToken in returned json same as in config");
 
 
 
 
-            exe = execute("delete test-client --config '" + configFile.getName() + "'");
+            exe = execute("delete " + clientId + " --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
             // check changes to config file
             ConfigData config3 = handler.loadConfig();
-            assertFieldsEqualWithExclusions(config2, config3, "endpoints." + serverUrl + ".master.clients.test-client");
+            assertFieldsEqualWithExclusions(config2, config3, "endpoints." + serverUrl + ".master.clients." + clientId);
 
             // check that registration access token is no longer there
             Assertions.assertTrue(config3.sessionRealmConfigData().getClients().isEmpty(), "clients empty");
@@ -614,27 +615,29 @@ public class KcRegTest extends AbstractRegCliTest {
             final String realm = "master";
 
             KcRegExec exe = execute("create " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
-                    + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -s client_id=test-client2 -o -t " + token);
+                    + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -s client_name=test-client2 -o -t " + token);
 
             Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
 
 
             OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
-            Assertions.assertEquals("test-client2", client.getClientId(), "clientId");
+            Assertions.assertNotNull(client.getClientId(), "clientId");
+            String clientId = client.getClientId();
+            Assertions.assertEquals("test-client2", client.getClientName(), "client_name");
             Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
 
 
             if (useConfig) {
                 ConfigData config = handler.loadConfig();
                 Assertions.assertEquals(client.getRegistrationAccessToken(),
-                        config.ensureRealmConfigData(keycloakUrls.getBase(), realm).getClients().get("test-client2"),
+                        config.ensureRealmConfigData(keycloakUrls.getBase(), realm).getClients().get(clientId),
                         "Registration Access Token in config file");
             } else {
                 Assertions.assertFalse(configFile.isFile(), "There should be no config file");
             }
 
-            exe = execute("delete test-client2 " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
+            exe = execute("delete " + clientId + " " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
                     + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -t " + client.getRegistrationAccessToken());
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 2);
@@ -661,16 +664,18 @@ public class KcRegTest extends AbstractRegCliTest {
 
         try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
             KcRegExec exe = execute("create " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
-                    + " --server " + serverUrl + " --realm " + realm + " -s client_id=test-client -o");
+                    + " --server " + serverUrl + " --realm " + realm + " -s client_name=test-client -o");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
             OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
-            Assertions.assertEquals("test-client", client.getClientId(), "clientId");
+            Assertions.assertNotNull(client.getClientId(), "clientId");
+            String clientId = client.getClientId();
+            Assertions.assertEquals("test-client", client.getClientName(), "client_name");
             Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
 
-            exe = execute("delete test-client " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
+            exe = execute("delete " + clientId + " " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
                     + " --server " + serverUrl + " --realm " + realm + " -t " + client.getRegistrationAccessToken());
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
