@@ -89,6 +89,11 @@ export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
   );
 
   useEffect(() => {
+    // Lets screen readers, fonts and hyphenation follow the language the console is shown in.
+    document.documentElement.setAttribute(
+      "lang",
+      whoAmI?.locale || DEFAULT_LOCALE,
+    );
     if (whoAmI?.locale && RTL_LOCALES.includes(whoAmI.locale)) {
       document.documentElement.setAttribute("dir", "rtl");
     } else {

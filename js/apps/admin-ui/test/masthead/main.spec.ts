@@ -156,6 +156,15 @@ test.describe.serial("Masthead tests", () => {
 
     test.afterAll(() => adminClient.deleteRealm(realmName));
 
+    test("Sets the page language and direction from the user's locale", async ({
+      page,
+    }) => {
+      await logout(page);
+      await login(page, { realm: realmName, username, password: "test" });
+      await expect(page.locator("html")).toHaveAttribute("lang", "ar");
+      await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    });
+
     test("Help menu opens inside the viewport", async ({ page }) => {
       await logout(page);
       await login(page, { realm: realmName, username, password: "test" });
