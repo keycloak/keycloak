@@ -208,7 +208,8 @@ public class LDAPConfig {
 
     public int getBatchSizeForSync() {
         String pageSizeConfig = config.getFirst(LDAPConstants.BATCH_SIZE_FOR_SYNC);
-        return pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
+        int batchSize = pageSizeConfig != null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
+        return batchSize > 0 ? batchSize : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
     }
 
     public String getUsernameLdapAttribute() {
