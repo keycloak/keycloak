@@ -12,6 +12,7 @@ import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthent
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -181,6 +182,75 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         assertNumFederatedIdentities(existingUser, 1);
+    }
+
+    /**
+     * The link with a disabled existing account can never be completed, so the confirm link page must not be shown.
+     * Instead, the user is shown an error page saying that the account is disabled.
+     */
+    @Test
+    public void testLinkAccountWithDisabledExistingUser() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        String existingUser = createUser("consumer");
+        UserResource existingUserResource = adminClient.realm(bc.consumerRealmName()).users().get(existingUser);
+        UserRepresentation existingUserRep = existingUserResource.toRepresentation();
+        existingUserRep.setEnabled(false);
+        existingUserResource.update(existingUserRep);
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "we are sorry...", false);
+        assertErrorPage("Account is disabled, contact your administrator.");
+
+        assertNumFederatedIdentities(existingUser, 0);
+        assertTrue(adminClient.realm(bc.consumerRealmName()).users().searchByUsername(bc.getUserLogin(), true).isEmpty());
+        assertUserDisabledEvent(existingUser);
+    }
+
+    /**
+     * The existing account is disabled after the confirm link page was shown. Adding to the existing account must show
+     * the same error page instead of continuing with the account verification.
+     */
+    @Test
+    public void testLinkAccountWithExistingUserDisabledAfterConfirmLinkPage() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        String existingUser = createUser("consumer");
+
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
+        logInWithBroker(bc);
+
+        waitForPage(driver, "account already exists", false);
+        idpConfirmLinkPage.assertCurrent();
+
+        UserResource existingUserResource = adminClient.realm(bc.consumerRealmName()).users().get(existingUser);
+        UserRepresentation existingUserRep = existingUserResource.toRepresentation();
+        existingUserRep.setEnabled(false);
+        existingUserResource.update(existingUserRep);
+
+        idpConfirmLinkPage.clickLinkAccount();
+
+        waitForPage(driver, "we are sorry...", false);
+        assertErrorPage("Account is disabled, contact your administrator.");
+
+        assertNumFederatedIdentities(existingUser, 0);
+        assertTrue(adminClient.realm(bc.consumerRealmName()).users().searchByUsername(bc.getUserLogin(), true).isEmpty());
+        assertUserDisabledEvent(existingUser);
+    }
+
+    private void assertUserDisabledEvent(String userId) {
+        EventRepresentation event = getFirstConsumerEvent();
+        while (event != null && !Errors.USER_DISABLED.equals(event.getError())) {
+            event = getFirstConsumerEvent();
+        }
+        Assertions.assertNotNull(event, "Expected an event with error " + Errors.USER_DISABLED);
+        assertEquals(userId, event.getUserId());
     }
 
     /**
