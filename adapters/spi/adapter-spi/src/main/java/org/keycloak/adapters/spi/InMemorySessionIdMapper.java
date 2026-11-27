@@ -17,10 +17,11 @@
 
 package org.keycloak.adapters.spi;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jboss.logging.Logger;
 
@@ -34,80 +35,71 @@ public class InMemorySessionIdMapper implements SessionIdMapper {
 
     private static final Logger LOG = Logger.getLogger(InMemorySessionIdMapper.class.getName());
 
-    ConcurrentHashMap<String, String> ssoToSession = new ConcurrentHashMap<>();
-    ConcurrentHashMap<String, String> sessionToSso = new ConcurrentHashMap<>();
-    ConcurrentHashMap<String, Set<String>> principalToSession = new ConcurrentHashMap<>();
-    ConcurrentHashMap<String, String> sessionToPrincipal = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> ssoToSessions = new HashMap<>();
+    private final Map<String, String> sessionToSso = new HashMap<>();
+    private final Map<String, Set<String>> principalToSessions = new HashMap<>();
+    private final Map<String, String> sessionToPrincipal = new HashMap<>();
 
     @Override
-    public boolean hasSession(String id) {
-        return sessionToSso.containsKey(id) || sessionToPrincipal.containsKey(id);
+    public synchronized boolean hasSession(String id) {
+        return sessionToSso.containsKey(id);
     }
 
     @Override
-    public void clear() {
-        ssoToSession.clear();
+    public synchronized void clear() {
+        ssoToSessions.clear();
         sessionToSso.clear();
-        principalToSession.clear();
+        principalToSessions.clear();
         sessionToPrincipal.clear();
     }
 
     @Override
-    public Set<String> getUserSessions(String principal) {
-        Set<String> lookup = principalToSession.get(principal);
-        if (lookup == null) return null;
-        Set<String> copy = new HashSet<>();
-        copy.addAll(lookup);
-        return copy;
+    public synchronized Set<String> getUserSessions(String principal) {
+        Set<String> sessions = principalToSessions.get(principal);
+        return sessions == null ? null : new HashSet<>(sessions);
     }
 
     @Override
-    public String getSessionFromSSO(String sso) {
-        return ssoToSession.get(sso);
+    public synchronized Set<String> getSessionsFromSSO(String sso) {
+        Set<String> sessions = ssoToSessions.get(sso);
+        return sessions == null ? Set.of() : Set.copyOf(sessions);
     }
 
     @Override
-    public void map(String sso, String principal, String session) {
+    public synchronized void map(String sso, String principal, String session) {
         LOG.debugf("Adding mapping (%s, %s, %s)", sso, principal, session);
 
+        Objects.requireNonNull(session, "session");
+        unmap(session);
+        // The local session is still authenticated when the assertion has no SessionIndex or NameID.
+        sessionToSso.put(session, sso);
         if (sso != null) {
-            ssoToSession.put(sso, session);
-            sessionToSso.put(session, sso);
+            ssoToSessions.computeIfAbsent(sso, key -> new HashSet<>()).add(session);
         }
-
-        if (principal == null) {
-            return;
+        if (principal != null) {
+            principalToSessions.computeIfAbsent(principal, key -> new HashSet<>()).add(session);
+            sessionToPrincipal.put(session, principal);
         }
-
-        Set<String> userSessions = principalToSession.get(principal);
-        if (userSessions == null) {
-            final Set<String> tmp = Collections.synchronizedSet(new HashSet<String>());
-            userSessions = principalToSession.putIfAbsent(principal, tmp);
-            if (userSessions == null) {
-                userSessions = tmp;
-            }
-        }
-        userSessions.add(session);
-        sessionToPrincipal.put(session, principal);
     }
 
     @Override
-    public void removeSession(String session) {
+    public synchronized void removeSession(String session) {
         LOG.debugf("Removing session %s", session);
+        unmap(session);
+    }
 
-        String sso = sessionToSso.remove(session);
-        if (sso != null) {
-            ssoToSession.remove(sso);
-        }
-        String principal =  sessionToPrincipal.remove(session);
-        if (principal != null) {
-            Set<String> sessions = principalToSession.get(principal);
+    private void unmap(String session) {
+        removeMapping(ssoToSessions, sessionToSso.remove(session), session);
+        removeMapping(principalToSessions, sessionToPrincipal.remove(session), session);
+    }
+
+    private static void removeMapping(Map<String, Set<String>> index, String key, String session) {
+        if (key != null) {
+            Set<String> sessions = index.get(key);
             sessions.remove(session);
             if (sessions.isEmpty()) {
-                principalToSession.remove(principal, sessions);
+                index.remove(key);
             }
         }
     }
-
-
 }

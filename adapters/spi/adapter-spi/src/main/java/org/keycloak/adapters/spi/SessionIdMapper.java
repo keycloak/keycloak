@@ -46,9 +46,18 @@ public interface SessionIdMapper {
     /**
      * Returns HTTP session ID from the given user session ID.
      * @param sso User session ID
-     * @return
+     * @deprecated Use {@link #getSessionsFromSSO(String)} to obtain every matching session.
      */
-    String getSessionFromSSO(String sso);
+    @Deprecated
+    default String getSessionFromSSO(String sso) {
+        return getSessionsFromSSO(sso).stream().findFirst().orElse(null);
+    }
+
+    /**
+     * Returns a snapshot of all HTTP session IDs associated with the given SSO session ID.
+     * Returns an empty set if there are no matches.
+     */
+    Set<String> getSessionsFromSSO(String sso);
 
     /**
      * Establishes mapping between user session ID, principal and HTTP session ID.

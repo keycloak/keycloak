@@ -456,7 +456,8 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         NameIDType subjectNameID = subType == null ? null : (NameIDType) subType.getBaseID();
-        String principalName = subjectNameID == null ? null : subjectNameID.getValue();
+        String samlSubject = subjectNameID == null ? null : subjectNameID.getValue();
+        String principalName = samlSubject;
 
         Set<String> roles = new HashSet<>();
         MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
@@ -530,7 +531,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
         final SamlPrincipal principal = new SamlPrincipal(assertion,
                 deployment.isKeepDOMAssertion()? getAssertionDocumentFromElement(assertionElement) : null,
-                principalName, principalName, nameFormatString, attributes, friendlyAttributes);
+                principalName, samlSubject, nameFormatString, attributes, friendlyAttributes);
         final String sessionIndex = authn == null ? null : authn.getSessionIndex();
         final XMLGregorianCalendar sessionNotOnOrAfter = authn == null ? null : authn.getSessionNotOnOrAfter();
         SamlSession account = new SamlSession(principal, roles, sessionIndex, sessionNotOnOrAfter);

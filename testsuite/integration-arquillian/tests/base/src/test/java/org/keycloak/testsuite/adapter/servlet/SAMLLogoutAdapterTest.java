@@ -18,10 +18,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
+import org.keycloak.testsuite.adapter.page.Employee2Servlet;
 import org.keycloak.testsuite.adapter.page.EmployeeServlet;
 import org.keycloak.testsuite.adapter.page.SalesPostServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
@@ -45,10 +47,12 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  *
@@ -68,6 +72,11 @@ public class SAMLLogoutAdapterTest extends AbstractServletsAdapterTest {
         return samlServletDeployment(EmployeeServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
+    @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
+    protected static WebArchive employee2() {
+        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
     @Deployment(name = SalesPostServlet.DEPLOYMENT_NAME)
     protected static WebArchive sales() {
         return samlServletDeployment(SalesPostServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
@@ -75,6 +84,9 @@ public class SAMLLogoutAdapterTest extends AbstractServletsAdapterTest {
 
     @Page
     private EmployeeServlet employeeServletPage;
+
+    @Page
+    private Employee2Servlet employee2ServletPage;
 
     @Page
     private SalesPostServlet salesPostServlet;
@@ -100,12 +112,17 @@ public class SAMLLogoutAdapterTest extends AbstractServletsAdapterTest {
         assertThat(firstAssertion.getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
 
         NameIDType nameId = (NameIDType) firstAssertion.getSubject().getSubType().getBaseID();
-        AuthnStatementType firstAssertionStatement = (AuthnStatementType) firstAssertion.getStatements().iterator().next();
-
         nameIdRef.set(nameId);
-        sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
+        sessionIndexRef.set(authnStatement(firstAssertion).getSessionIndex());
 
         return so;
+    }
+
+    private static AuthnStatementType authnStatement(AssertionType assertion) {
+        return assertion.getStatements().stream()
+                .filter(AuthnStatementType.class::isInstance)
+                .map(AuthnStatementType.class::cast)
+                .findFirst().orElseThrow();
     }
 
     @Test
@@ -137,6 +154,85 @@ public class SAMLLogoutAdapterTest extends AbstractServletsAdapterTest {
         assertThat(logoutRequestNameID.getNameQualifier(), is(NAME_QUALIFIER));
         assertThat(logoutRequestNameID.getSPProvidedID(), is(SP_PROVIDED_ID));
         assertThat(logoutRequestNameID.getSPNameQualifier(), is(SP_NAME_QUALIFIER));
+    }
+
+    @Test
+    public void logoutByNameIdWithAttributePrincipal() {
+        URI endpoint = employee2ServletPage.getUriBuilder().clone().path("saml").build();
+        SAMLDocumentHolder nextRequest = new SamlClientBuilder()
+                .navigateTo(employee2ServletPage)
+                .processSamlResponse(POST).build()
+                .login().user(bburkeUser).build()
+                .processSamlResponse(POST)
+                    .targetAttributeSamlResponse()
+                    .transformObject(this::extractNameId)
+                    .build()
+                .navigateTo(employee2ServletPage)
+                .assertResponse(Matchers.bodyHC(containsString("principal=" + bburkeUser.getEmail())))
+                .logoutRequest(endpoint, getAuthServerRoot() + "realms/demo", POST)
+                    .nameId(nameIdRef::get)
+                    .build()
+                .doNotFollowRedirects()
+                .assertResponse(SAMLLogoutAdapterTest::assertSamlLogoutResponse)
+                .navigateTo(employee2ServletPage)
+                .getSamlResponse(POST);
+
+        assertThat(nameIdRef.get().getValue(), not(bburkeUser.getEmail()));
+        assertThat(nextRequest.getSamlObject(), Matchers.isSamlAuthnRequest());
+    }
+
+    @Test
+    public void logoutBySessionIndexInvalidatesOnlyMatchingApplicationSessions() {
+        String sharedIndex = "shared-index";
+        SamlClient first = loginWithSessionIndex(sharedIndex);
+        NameIDType subject = nameIdRef.get();
+        SamlClient second = loginWithSessionIndex(sharedIndex);
+        String otherIndex = "other-index";
+        SamlClient other = loginWithSessionIndex(otherIndex);
+
+        URI endpoint = employeeServletPage.getUriBuilder().clone().path("saml").build();
+        new SamlClientBuilder()
+                .logoutRequest(endpoint, getAuthServerRoot() + "realms/demo", POST)
+                    .nameId(subject)
+                    .sessionIndex(sharedIndex)
+                    .build()
+                .doNotFollowRedirects()
+                .assertResponse(SAMLLogoutAdapterTest::assertSamlLogoutResponse)
+                .execute();
+
+        for (SamlClient loggedOut : List.of(first, second)) {
+            SAMLDocumentHolder challenge = loggedOut.executeAndTransform(POST::extractResponse,
+                    new SamlClientBuilder().navigateTo(employeeServletPage).doNotFollowRedirects().getSteps());
+            assertThat(challenge.getSamlObject(), Matchers.isSamlAuthnRequest());
+        }
+        assertEmployeeSession(other, otherIndex);
+    }
+
+    private SamlClient loginWithSessionIndex(String index) {
+        SamlClient browser = new SamlClientBuilder()
+                .navigateTo(employeeServletPage)
+                .processSamlResponse(POST).build()
+                .login().user(bburkeUser).build()
+                .processSamlResponse(POST)
+                    .targetAttributeSamlResponse()
+                    .transformObject(this::extractNameId)
+                    .transformObject(response -> {
+                        AssertionType assertion = ((ResponseType) response).getAssertions().get(0).getAssertion();
+                        authnStatement(assertion).setSessionIndex(index);
+                    })
+                    .build()
+                .execute();
+        assertEmployeeSession(browser, index);
+        return browser;
+    }
+
+    private void assertEmployeeSession(SamlClient browser, String index) {
+        browser.execute(new SamlClientBuilder()
+                .navigateTo(employeeServletPage)
+                .doNotFollowRedirects()
+                .assertResponse(Matchers.bodyHC(allOf(containsString("principal=" + bburkeUser.getUsername()),
+                        containsString("Session ID: " + index))))
+                .getSteps());
     }
 
     @Test

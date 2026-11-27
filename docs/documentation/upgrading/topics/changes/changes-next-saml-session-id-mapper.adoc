@@ -1,0 +1,10 @@
+== Breaking changes
+
+=== SAML adapter session mapper
+
+Custom implementations of `org.keycloak.adapters.spi.SessionIdMapper` must implement `getSessionsFromSSO(String)` and be rebuilt before upgrading the adapter.
+Return a snapshot containing every local HTTP session ID associated with the SAML session index, or an empty set if there are no matches.
+The adapter uses this lookup for single logout.
+
+When using `FROM_ATTRIBUTE`, sessions created before the upgrade may still be indexed by the mapped attribute.
+Expire those sessions during the upgrade if logout by the asserted `NameID` must take effect immediately.

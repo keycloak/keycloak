@@ -18,7 +18,8 @@
 package org.keycloak.adapters.saml.elytron;
 
 import java.net.URI;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -84,9 +85,7 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
             log.debug("Logging out - current account");
             SamlSession samlSession = (SamlSession)session.getAttachment(SamlSession.class.getName());
             if (samlSession != null) {
-                if (samlSession.getSessionIndex() != null) {
-                    idMapperUpdater.removeSession(idMapper, session.getID());
-                }
+                idMapperUpdater.removeSession(idMapper, session.getID());
                 session.setAttachment(SamlSession.class.getName(), null);
             }
             session.setAttachment(SAML_REDIRECT_URI, null);
@@ -98,28 +97,25 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
         Set<String> sessions = idMapper.getUserSessions(principal);
         if (sessions != null) {
             log.debugf("Logging out - by principal: %s", sessions);
-            List<String> ids = new LinkedList<>();
-            ids.addAll(sessions);
-            logoutSessionIds(ids);
-            for (String id : ids) {
-                idMapperUpdater.removeSession(idMapper, id);
-            }
+            logoutMappedSessions(sessions);
         }
-
     }
 
     @Override
     public void logoutBySsoId(List<String> ssoIds) {
         if (ssoIds == null) return;
         log.debugf("Logging out - by session IDs: %s", ssoIds);
-        List<String> sessionIds = new LinkedList<>();
+        Set<String> sessionIds = new LinkedHashSet<>();
         for (String id : ssoIds) {
-             String sessionId = idMapper.getSessionFromSSO(id);
-             if (sessionId != null) {
-                 sessionIds.add(sessionId);
-                 idMapperUpdater.removeSession(idMapper, sessionId);
-             }
+            sessionIds.addAll(idMapper.getSessionsFromSSO(id));
+        }
+        logoutMappedSessions(sessionIds);
+    }
 
+    private void logoutMappedSessions(Set<String> sessions) {
+        List<String> sessionIds = new ArrayList<>(sessions);
+        for (String id : sessionIds) {
+            idMapperUpdater.removeSession(idMapper, id);
         }
         logoutSessionIds(sessionIds);
     }
@@ -128,7 +124,7 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
         sessionIds.forEach(id -> {
             HttpScope scope = exchange.getScope(Scope.SESSION, id);
 
-            if (scope.exists()) {
+            if (scope != null && scope.exists()) {
                 log.debugf("Invalidating session %s", id);
                 scope.setAttachment(SamlSession.class.getName(), null);
                 scope.invalidate();
