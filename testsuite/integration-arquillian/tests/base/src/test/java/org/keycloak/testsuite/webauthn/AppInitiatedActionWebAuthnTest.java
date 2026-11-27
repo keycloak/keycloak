@@ -48,6 +48,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
@@ -55,6 +56,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -87,6 +89,9 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
     @Page
     WebAuthnRegisterPage webAuthnRegisterPage;
+
+    @Page
+    WebAuthnErrorPage webAuthnErrorPage;
 
     @Drone
     @SecondBrowser
@@ -182,21 +187,31 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         testWebAuthnLogoutOtherSessions(false);
     }
 
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void failedSetupWebAuthnKeepsOtherSessions() throws IOException {
+        UserResource testUser = managedRealm.admin().users().get(findUser(DEFAULT_USERNAME).getId());
+        loginInSecondBrowser(testUser);
+        loginUser();
+        assertEquals(2, testUser.getUserSessions().size());
+
+        doAIA();
+
+        webAuthnRegisterPage.assertCurrent();
+        webAuthnRegisterPage.checkLogoutSessions();
+        // send an invalid attestation so that the server rejects the registration
+        ((JavascriptExecutor) driver).executeScript("document.getElementById('register').addEventListener('submit', function() {"
+                + " document.getElementById('attestationObject').value = 'AAAA'; });");
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.registerWebAuthnCredential("authenticator1");
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(testUser.getUserSessions().size(), is(2));
+    }
+
     protected void testWebAuthnLogoutOtherSessions(boolean logoutOtherSessions) throws IOException {
         UserResource testUser = managedRealm.admin().users().get(findUser(DEFAULT_USERNAME).getId());
-
-        // perform a login using normal user/password form to have an old session
-        EventRepresentation event1;
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
-                .setBrowserFlow("browser")
-                .update()) {
-            OAuthClient oauth2 = oauth.newConfig().driver(driver2);
-            oauth2.doLogin(DEFAULT_USERNAME, getPassword(DEFAULT_USERNAME));
-            event1 = events.poll();
-            EventAssertion.expectLoginSuccess(event1);
-            assertEquals(1, testUser.getUserSessions().size());
-        }
-
+        EventRepresentation event1 = loginInSecondBrowser(testUser);
         EventRepresentation event2 = loginUser();
         assertEquals(2, testUser.getUserSessions().size());
 
@@ -229,6 +244,20 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
             assertThat(sessions.size(), is(2));
             assertThat(sessions.stream().map(UserSessionRepresentation::getId).collect(Collectors.toList()),
                     containsInAnyOrder(event1.getSessionId(), event2.getSessionId()));
+        }
+    }
+
+    // perform a login using normal user/password form to have an old session
+    private EventRepresentation loginInSecondBrowser(UserResource testUser) throws IOException {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
+                .setBrowserFlow("browser")
+                .update()) {
+            OAuthClient oauth2 = oauth.newConfig().driver(driver2);
+            oauth2.doLogin(DEFAULT_USERNAME, getPassword(DEFAULT_USERNAME));
+            EventRepresentation event = events.poll();
+            EventAssertion.expectLoginSuccess(event);
+            assertEquals(1, testUser.getUserSessions().size());
+            return event;
         }
     }
 

@@ -721,6 +721,32 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         testTotpLogoutOtherSessions(false);
     }
 
+    @Test
+    public void failedTotpSetupKeepsOtherSessions() {
+        configureRequiredActionsToUser("test-user@localhost");
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
+        oauth.newConfig().driver(driver2).doLogin("test-user@localhost", "password");
+
+        // set up a first OTP labelled "phone"
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+        totpPage.assertCurrent();
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "phone");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        assertEquals(2, testUser.getUserSessions().size());
+
+        // a second OTP with the same label is rejected, so the other session must stay
+        configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        oauth.openLoginForm();
+        totpPage.assertCurrent();
+        totpPage.checkLogoutSessions();
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "phone");
+        totpPage.assertCurrent();
+        assertEquals("Device already exists with the same name", totpPage.getInputLabelError());
+        assertEquals(2, testUser.getUserSessions().size());
+    }
+
     private void testTotpLogoutOtherSessions(boolean logoutOtherSessions) {
         configureRequiredActionsToUser("test-user@localhost");
 

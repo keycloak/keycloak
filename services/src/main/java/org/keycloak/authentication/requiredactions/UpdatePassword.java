@@ -140,14 +140,14 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         }
 
-        if ("on".equals(formData.getFirst("logout-sessions"))) {
-            AuthenticatorUtil.logoutOtherSessions(context);
-        }
-
         try {
             user.credentialManager()
                     .updateCredentialAndGet(UserCredentialModel.password(passwordNew, false))
                     .ifPresent(credential -> event.detail(Details.CREDENTIAL_ID, credential.getId()));
+
+            if ("on".equals(formData.getFirst("logout-sessions"))) {
+                AuthenticatorUtil.logoutOtherSessions(context);
+            }
 
             context.success();
             deprecatedEvent.success();
