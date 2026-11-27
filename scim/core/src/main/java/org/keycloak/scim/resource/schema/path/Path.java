@@ -1,12 +1,22 @@
 package org.keycloak.scim.resource.schema.path;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
+import org.keycloak.scim.filter.ScimFilterParserBaseVisitor;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 
 public final class Path {
@@ -60,5 +70,177 @@ public final class Path {
 
         ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(filter);
         return new ScimFilterToJsonNodeConverter(attribute).visit(filterContext);
+    }
+
+    /**
+     * Whether the filter compares only the {@code value} sub-attribute, e.g. {@code members[value eq "..."]}. Such a
+     * filter is turned into the value to remove by {@link #getValue(Attribute)}; any other is resolved against the
+     * entries the resource holds, by {@link #select(Attribute, JsonNode)}.
+     */
+    public boolean filtersOnlyOnValue() {
+        if (filter == null) {
+            return true;
+        }
+        return attributeNames(FilterUtils.parseFilter(filter)).stream().allMatch("value"::equalsIgnoreCase);
+    }
+
+    /**
+     * The entries of a complex multi-valued {@code attribute}, from those the resource currently holds, that the filter
+     * selects (RFC 7644 section 3.5.2), e.g. the email whose {@code type} is {@code work}. Each sub-attribute the filter
+     * names must be one of the complex type's, so a typo gets a 400 rather than silently matching nothing.
+     *
+     * @param attribute the complex multi-valued attribute the path names
+     * @param current the attribute's current entries as JSON, or {@code null} when it has none
+     * @return the matching entries, possibly none
+     */
+    public ArrayNode select(Attribute<?, ?> attribute, JsonNode current) {
+        if (filter == null || attribute.getComplexType() == null || !attribute.isMultivalued()) {
+            throw new IllegalStateException("select needs a filter on a complex multi-valued attribute");
+        }
+
+        ScimFilterParser.FilterContext parsed = FilterUtils.parseFilter(filter);
+        JavaType type = JsonSerialization.mapper.getTypeFactory().constructType(attribute.getComplexType());
+        List<String> known = JsonSerialization.mapper.getSerializationConfig().introspect(type).findProperties().stream()
+                .map(p -> p.getName()).toList();
+
+        for (String name : attributeNames(parsed)) {
+            if (!known.contains(name)) {
+                throw new ModelValidationException("Unknown attribute " + name + " in the filter for " + attribute.getName());
+            }
+        }
+
+        ArrayNode matched = JsonNodeFactory.instance.arrayNode();
+
+        if (current == null || !current.isArray()) {
+            return matched;
+        }
+
+        for (JsonNode entry : current) {
+            if (entry.isObject() && Boolean.TRUE.equals(new ScimFilterEntryMatcher(entry).visit(parsed))) {
+                matched.add(entry);
+            }
+        }
+
+        return matched;
+    }
+
+    private static List<String> attributeNames(ScimFilterParser.FilterContext parsed) {
+        List<String> names = new ArrayList<>();
+        new ScimFilterParserBaseVisitor<Void>() {
+            @Override
+            public Void visitPresentExpression(ScimFilterParser.PresentExpressionContext ctx) {
+                names.add(ctx.ATTRPATH().getText());
+                return null;
+            }
+
+            @Override
+            public Void visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
+                names.add(ctx.ATTRPATH().getText());
+                return null;
+            }
+
+            @Override
+            public Void visitValuePath(ScimFilterParser.ValuePathContext ctx) {
+                names.add(ctx.ATTRPATH().getText());
+                return super.visitValuePath(ctx);
+            }
+        }.visit(parsed);
+        return names;
+    }
+
+    /**
+     * Decides whether one entry of a complex multi-valued attribute, as it currently is on the resource, matches a value
+     * selection filter, e.g. {@code type eq "work"} in {@code emails[type eq "work"].value}.
+     *
+     * <p>RFC 7644 section 3.5.2 lets a PATCH {@code remove} or {@code replace} select the values of a multi-valued
+     * attribute with a filter on any of its sub-attributes. {@link ScimFilterToJsonNodeConverter} turns a filter into the
+     * value to remove, which only works for {@code value}; a filter on another sub-attribute has to be compared with the
+     * entries the resource already holds. Microsoft Entra ID sends exactly that when a user's email changes.
+     *
+     * <p>Attribute names were checked against the complex type before this runs. String comparisons ignore case, as
+     * {@code type}, {@code display} and {@code value} of the core multi-valued attributes are not case exact.
+     */
+    private static final class ScimFilterEntryMatcher extends ScimFilterParserBaseVisitor<Boolean> {
+
+        private final JsonNode entry;
+
+        ScimFilterEntryMatcher(JsonNode entry) {
+            this.entry = entry;
+        }
+
+        @Override
+        public Boolean visitFilter(ScimFilterParser.FilterContext ctx) {
+            return visit(ctx.expression());
+        }
+
+        @Override
+        public Boolean visitExpression(ScimFilterParser.ExpressionContext ctx) {
+            if (ctx.OR() != null) {
+                return visit(ctx.expression()) || visit(ctx.andExpression());
+            }
+            return visit(ctx.andExpression());
+        }
+
+        @Override
+        public Boolean visitAndExpression(ScimFilterParser.AndExpressionContext ctx) {
+            if (ctx.AND() != null) {
+                return visit(ctx.andExpression()) && visit(ctx.notExpression());
+            }
+            return visit(ctx.notExpression());
+        }
+
+        @Override
+        public Boolean visitNotExpression(ScimFilterParser.NotExpressionContext ctx) {
+            if (ctx.NOT() != null) {
+                return !visit(ctx.notExpression());
+            }
+            return visit(ctx.atom());
+        }
+
+        @Override
+        public Boolean visitAtom(ScimFilterParser.AtomContext ctx) {
+            if (ctx.valuePath() != null) {
+                throw new ModelValidationException("Nested value filters are not supported when selecting values of a multi-valued attribute");
+            }
+            if (ctx.attributeExpression() != null) {
+                return visit(ctx.attributeExpression());
+            }
+            return visit(ctx.expression());
+        }
+
+        @Override
+        public Boolean visitPresentExpression(ScimFilterParser.PresentExpressionContext ctx) {
+            JsonNode actual = entry.get(ctx.ATTRPATH().getText());
+            return actual != null && !actual.isNull() && !(actual.isTextual() && actual.asText().isEmpty());
+        }
+
+        @Override
+        public Boolean visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
+            String operator = ctx.compareOp().getText().toLowerCase(Locale.ROOT);
+            String expected = FilterUtils.extractCompValue(ctx.compValue());
+            JsonNode node = entry.get(ctx.ATTRPATH().getText());
+            String actual = node == null || node.isNull() ? null : node.asText();
+
+            if (expected == null || actual == null) {
+                return switch (operator) {
+                    case "eq" -> expected == actual;
+                    case "ne" -> expected != actual;
+                    default -> false;
+                };
+            }
+
+            String a = actual.toLowerCase(Locale.ROOT);
+            String e = expected.toLowerCase(Locale.ROOT);
+
+            return switch (operator) {
+                case "eq" -> a.equals(e);
+                case "ne" -> !a.equals(e);
+                case "co" -> a.contains(e);
+                case "sw" -> a.startsWith(e);
+                case "ew" -> a.endsWith(e);
+                default -> throw new ModelValidationException(
+                        "Operator '" + operator + "' is not supported when selecting values of a multi-valued attribute");
+            };
+        }
     }
 }

@@ -17,6 +17,7 @@ import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.resource.spi.ScimMutabilityException;
+import org.keycloak.scim.resource.spi.ScimNoTargetException;
 import org.keycloak.scim.resource.spi.ScimPatchException;
 import org.keycloak.theme.Theme;
 
@@ -43,6 +44,8 @@ class Error {
             return badRequest("invalidFilter", e.getMessage());
         } else if (e instanceof ScimMutabilityException) {
             return badRequest("mutability", e.getMessage());
+        } else if (e instanceof ScimNoTargetException) {
+            return badRequest("noTarget", e.getMessage());
         } else if (e instanceof ScimPatchException) {
             return badRequest("tooMany", e.getMessage());
         } else if (e instanceof ForbiddenException) {
