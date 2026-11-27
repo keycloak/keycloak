@@ -104,6 +104,7 @@ class FGAPPolicyEvaluationResponseBuilder {
             if (AdminPermissionsSchema.USERS_RESOURCE_TYPE.equals(request.getResourceType())
                     && AdminPermissionsSchema.GROUPS_RESOURCE_TYPE.equals(policyRep.getResourceType())
                     && AdminPermissionsSchema.USERS.getScopeAliases().values().stream().flatMap(Set::stream).anyMatch(policyRep.getScopes()::contains)) {
+                // AND is correct because admin permissions only support the UNANIMOUS decision strategy
                 GroupMemberDecision vote = policy.getAssociatedPolicies().isEmpty() ? GroupMemberDecision.NO_GRANT : GroupMemberDecision.GRANT;
                 for (Result.PolicyResult child : policy.getAssociatedPolicies()) {
                     vote = vote.and(GroupMemberDecision.of(result.getPermission(), child.getPolicy(), child.getEffect()));

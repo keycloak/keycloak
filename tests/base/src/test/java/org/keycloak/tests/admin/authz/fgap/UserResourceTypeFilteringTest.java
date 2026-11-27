@@ -117,6 +117,30 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @Test
     @DatabaseTest
+    public void testOtherAdminTypeLevelPermissionDoesNotDenyCurrentAdmin() {
+        // Admin A has an all-users VIEW permission. Another admin B also has one.
+        // B's permission should not deny A's access.
+        UserPolicyRepresentation policyA = createUserPolicy(realm, adminPermissionsClient, "Allow Admin A",
+                realm.admin().users().search("myadmin").get(0).getId());
+        createAllPermission(adminPermissionsClient, usersType, policyA, Set.of(VIEW));
+
+        // Before adding B's permission, A sees all users
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 100);
+        int baselineCount = search.size();
+        assertThat(baselineCount, Matchers.greaterThanOrEqualTo(50));
+
+        UserRepresentation otherAdmin = createUser("other-admin");
+        UserPolicyRepresentation policyB = createUserPolicy(realm, adminPermissionsClient, "Allow Admin B",
+                otherAdmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, policyB, Set.of(VIEW));
+
+        // After adding B's permission, A should still see all users plus the new one
+        search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 100);
+        assertThat(search, hasSize(baselineCount + 1));
+    }
+
+    @Test
+    @DatabaseTest
     public void testDeniedResourcesPrecedenceOverGrantedResources() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));

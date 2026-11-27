@@ -149,7 +149,12 @@ public final class PartialEvaluator {
 
                 if (Outcome.GRANT.equals(granted)) {
                     allowedResources.addAll(ids);
-                } else {
+                } else if (!AdminPermissionsSchema.USERS.equals(resourceType)
+                        || Logic.NEGATIVE.equals(policy.getLogic())
+                        || Outcome.EXPLICIT_DENY.equals(granted)) {
+                    // For Users we evaluate all permissions, not just this admin's.
+                    // A positive policy that simply does not cover this admin is not
+                    // a denial — only negative-logic and explicit denials restrict.
                     deniedResources.addAll(ids);
                 }
             }
@@ -242,6 +247,7 @@ public final class PartialEvaluator {
         Map<String, GroupMemberDecision> policyDecisions = new HashMap<>();
         permissionsForScope(authorization, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW_MEMBERS).forEach(permission -> {
             GroupMemberDecision decision = GroupMemberDecision.GRANT;
+            // AND is correct because admin permissions only support the UNANIMOUS decision strategy
             for (Policy policy : permission.getAssociatedPolicies()) {
                 decision = decision.and(policyDecisions.computeIfAbsent(policy.getId(),
                         id -> evaluateMemberPolicy(session, authorization, admin, policy)));

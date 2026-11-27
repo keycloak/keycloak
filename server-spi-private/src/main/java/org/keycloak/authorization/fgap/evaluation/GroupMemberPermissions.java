@@ -51,6 +51,8 @@ final class GroupMemberPermissions {
         record(permission, vote);
     }
 
+    // Votes are combined with AND: admin permissions only support the UNANIMOUS decision strategy
+    // (enforced by AdminPermissionsSchema#throwExceptionIfResourceTypeOrScopesNotProvided).
     void record(Policy permission, GroupMemberDecision vote) {
         for (var scope : permission.getScopes()) {
             var groups = scopes.computeIfAbsent(scope.getName(), ignored -> new HashMap<>());
