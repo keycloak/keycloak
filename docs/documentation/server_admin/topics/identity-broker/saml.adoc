@@ -94,7 +94,7 @@ itself.
 |External URL where Identity Provider publishes the `IDPSSODescriptor` metadata. This URL is used to download the Identity Provider certificates when the `Reload keys` or `Import keys` actions are clicked.
 
 |Use metadata descriptor URL
-|When *ON*, the certificates to validate signatures are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. The SAML provider can validate signatures in two different ways. If a specific certificate is requested (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works. The default cache TTL for SAML metadata is 24 hours (86,400 seconds).
+|When *ON*, the certificates to validate signatures are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. The SAML provider can validate signatures in two different ways. If a specific certificate is requested (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works. The default cache TTL for SAML metadata is 24 hours (86,400 seconds). See <<_identity_broker_saml_metadata_key_cache, Caching keys from the metadata descriptor URL>> for the options that control the cache and their trade-offs.
 
 When the option is *OFF*, the certificates in `Validating X509 Certificates` are used to validate signatures.
 
@@ -118,6 +118,61 @@ When the option is *OFF*, the certificates in `Validating X509 Certificates` are
 |===
 
 You can import all configuration data by providing a URL or a file pointing to the SAML IDP entity descriptor of the external IDP. If you are connecting to a {project_name} external IDP, you can import the IDP settings from the URL `<root>{kc_realms_path}/{realm-name}/protocol/saml/descriptor`. This link is an XML document describing metadata about the IDP. You can also import all this configuration data by providing a URL or XML file pointing to the external SAML IDP's entity descriptor to connect to.
+
+[[_identity_broker_saml_metadata_key_cache]]
+==== Caching keys from the metadata descriptor URL
+
+When *Use metadata descriptor URL* is *ON*, {project_name} validates the signatures of the identity provider with the keys that it downloads from the *Metadata descriptor URL*.
+Each {project_name} node keeps the downloaded keys in a local cache.
+A node downloads the descriptor when it validates a signature and its cache has no keys for the identity provider.
+A node that has cached keys downloads the descriptor again in the following situations:
+
+* A SAML message identifies the key that signed it, for example by a key name or a certificate in its signature, and that key is not in the cache.
+* The cached keys have expired according to the `cacheDuration` or `validUntil` attribute of the descriptor.
+* A SAML message does not identify the key that signed it, the descriptor has neither of these attributes, and the cached keys are older than the maximum cache time.
+For such a message, {project_name} tries all cached keys and cannot detect that a key is missing.
+* An administrator selects the *Reload keys* action on the identity provider page.
+
+In all these situations, a node does not download the descriptor again if the cached keys were downloaded within the minimum time between requests.
+The node then validates signatures only against the keys that are already in the cache.
+When a SAML message causes a download, {project_name} waits for the download before it validates the message, and it does not accept the message if the download fails.
+
+The minimum time between requests and the maximum cache time are options of the `public-key-storage` provider:
+
+`+spi-public-key-storage--infinispan--min-time-between-requests+`::
+The minimum time in seconds between two downloads of the keys of the same identity provider on a node.
+The default value is `10`.
+
+`+spi-public-key-storage--infinispan--max-cache-time+`::
+The time in seconds after which a node downloads the keys again when SAML messages do not identify the key that signed them and the descriptor does not define an expiration.
+The default value is `86400` (24 hours).
+
+Both options apply to the whole server.
+They also control the cache of other external keys, such as the keys that OpenID Connect identity providers and clients publish at a JWKS URL.
+For the description of these options, see the `public-key-storage` section in the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}].
+For example, the following command sets the maximum cache time to one hour:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-public-key-storage--infinispan--max-cache-time=3600
+----
+
+{project_name} reads the `cacheDuration` and `validUntil` attributes from the `EntityDescriptor` element or, if that element has neither attribute, from the `IDPSSODescriptor` element.
+The cached keys expire when the `cacheDuration` has elapsed since the download or when the `validUntil` time is reached, whichever comes first.
+This expiration replaces the maximum cache time, so it can be shorter or longer than the value of the `max-cache-time` option.
+After the keys expire, the next signature validation downloads the descriptor again, whether or not the SAML message identifies the key that signed it.
+
+Consider the following trade-offs before you change the options:
+
+* A lower minimum time between requests makes a key that the identity provider recently published usable sooner.
+However, SAML messages that refer to keys that are not in the cache can then cause more frequent requests to the metadata endpoint, and those messages wait for the response of that endpoint.
+* A higher minimum time between requests limits these requests.
+However, SAML messages that are signed with a recently published key can be rejected for a longer time.
+* A lower maximum cache time makes {project_name} stop using keys that were removed from the descriptor sooner, at the cost of more downloads.
+* A higher maximum cache time reduces the downloads.
+However, keys that were removed from the descriptor stay in use for longer, unless the descriptor limits the time with `cacheDuration` or `validUntil`.
+* The maximum cache time has no effect on SAML messages that identify a key that is in the cache.
+If the descriptor has neither a `cacheDuration` nor a `validUntil` attribute, such a key stays in use on a node after the identity provider removes it from the descriptor, until that node downloads the descriptor again.
 
 [[_identity_broker_saml_requested_authncontext]]
 ==== Requesting specific AuthnContexts
