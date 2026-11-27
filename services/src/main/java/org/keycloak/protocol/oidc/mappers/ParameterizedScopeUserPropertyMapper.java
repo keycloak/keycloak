@@ -69,6 +69,10 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
         }
 
         ParameterizedScopeTypeProvider scopeType = keycloakSession.getProvider(ParameterizedScopeTypeProvider.class, clientScope.getParameterizedScopeType());
+        if (!(scopeType instanceof UsernameScopeType usernameType)) {
+            return;
+        }
+
         RealmModel realm = userSession.getRealm();
 
         List<Object> resolvedValues = new ArrayList<>();
@@ -78,8 +82,7 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
                 continue;
             }
 
-            boolean accessDenied = scopeType instanceof UsernameScopeType usernameType && !usernameType.canAccessTargetUser(clientScope, userSession.getUser(), targetUser);
-            if (accessDenied) {
+            if (!usernameType.canAccessTargetUser(clientScope, userSession.getUser(), targetUser)) {
                 logger.debugf("Skipping user property claim for target user '%s' — authenticated user '%s' is not authorized to access the target user's data",
                         parameterValue, userSession.getUser().getUsername());
                 continue;
