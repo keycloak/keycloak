@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -31,6 +32,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static final Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
     public static final String SESSION_LIMIT_EXCEEDED = "sessionLimitExceeded";
+    public static final String SESSION_FLOW_NOTE = "kc.session.flow";
     protected final KeycloakSession session;
 
     String behavior;
@@ -58,16 +60,24 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         final boolean newClientSession = authResult == null || authResult.session() == null
                 || authResult.session().getAuthenticatedClientSessionByClient(currentClient.getId()) == null;
 
+        // Stamp the current top-level flow on the authentication session
+        String flowAlias = context.getTopLevelFlow() != null ? context.getTopLevelFlow().getAlias() : null;
+        if (flowAlias != null && context.getAuthenticationSession() != null) {
+            context.getAuthenticationSession().setUserSessionNote(SESSION_FLOW_NOTE, flowAlias);
+        }
+
         // Get the configuration for this authenticator
         behavior = config.get(UserSessionLimitsAuthenticatorFactory.BEHAVIOR);
         int userRealmLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, config);
         int userClientLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, config);
+        boolean countSessionsPerFlow = Boolean.parseBoolean(config.get(UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW));
 
         if (context.getRealm() != null && context.getUser() != null) {
 
             // Get the session count in this realm for this specific user
             List<UserSessionModel> userSessionsForRealm = session.sessions()
                     .getUserSessionsStream(context.getRealm(), context.getUser())
+                    .filter(userSession -> !countSessionsPerFlow || (flowAlias != null && flowAlias.equals(userSession.getNote(SESSION_FLOW_NOTE))))
                     .collect(Collectors.toList());
             int userSessionCountForRealm = userSessionsForRealm.size();
 
@@ -76,6 +86,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             int userSessionCountForClient = userSessionsForClient.size();
             logger.debugf("session-limiter's configured realm session limit: %s", userRealmLimit);
             logger.debugf("session-limiter's configured client session limit: %s", userClientLimit);
+            logger.debugf("session-limiter's configured count sessions per flow: %s", countSessionsPerFlow);
             logger.debugf("session-limiter's count of total user sessions for the entire realm (could be apps other than web apps): %s", userSessionCountForRealm);
             logger.debugf("session-limiter's count of total user sessions for this keycloak client: %s", userSessionCountForClient);
 
@@ -85,6 +96,8 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 String eventDetails = String.format("Realm session limit exceeded. Realm: %s, Realm limit: %s. Session count: %s, User id: %s",
                         context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
 
+                // Record which limit type was exceeded so action() can target the right sessions
+                context.getAuthenticationSession().setAuthNote("kc.session.limit.exceeded.type", "realm");
                 var removedClientSessions = handleLimitExceeded(context, userSessionsForClient, eventDetails, userClientLimit);
                 if (exceedsLimit(userSessionCountForRealm - removedClientSessions.size(), userRealmLimit))
                 {
@@ -99,6 +112,8 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForClient);
                 String eventDetails = String.format("Client session limit exceeded. Realm: %s, Client limit: %s. Session count: %s, User id: %s",
                         context.getRealm().getName(), userClientLimit, userSessionCountForClient, context.getUser().getId());
+                // Record which limit type was exceeded so action() can target the right sessions
+                context.getAuthenticationSession().setAuthNote("kc.session.limit.exceeded.type", "client");
                 handleLimitExceeded(context, userSessionsForClient, eventDetails, userClientLimit);
             } else {
                 context.success();
@@ -139,7 +154,43 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
 
+        if (formData.containsKey("cancel")) {
+            context.cancelLogin();
+            return;
+        }
+
+        if (!formData.containsKey("terminateOldest")) {
+            // Unknown action — re-show the confirmation form
+            Response challenge = context.form().createForm("session-limit-confirmation.ftl");
+            context.challenge(challenge);
+            return;
+        }
+
+        // Re-compute sessions to avoid holding stale references across requests
+        AuthenticatorConfigModel authenticatorConfig = context.getAuthenticatorConfig();
+        Map<String, String> config = authenticatorConfig.getConfig();
+        int userRealmLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, config);
+        int userClientLimit = getIntConfigProperty(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, config);
+        boolean countSessionsPerFlow = Boolean.parseBoolean(config.get(UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW));
+        String flowAlias = context.getTopLevelFlow() != null ? context.getTopLevelFlow().getAlias() : null;
+        ClientModel currentClient = context.getAuthenticationSession().getClient();
+
+        List<UserSessionModel> userSessionsForRealm = session.sessions()
+                .getUserSessionsStream(context.getRealm(), context.getUser())
+                .filter(us -> !countSessionsPerFlow || (flowAlias != null && flowAlias.equals(us.getNote(SESSION_FLOW_NOTE))))
+                .collect(Collectors.toList());
+
+        // Determine which limit was exceeded so we terminate the right set of sessions
+        String exceededType = context.getAuthenticationSession().getAuthNote("kc.session.limit.exceeded.type");
+        if ("client".equals(exceededType)) {
+            List<UserSessionModel> userSessionsForClient = getUserSessionsForClientIfEnabled(userSessionsForRealm, currentClient, userClientLimit);
+            logoutOldestSessions(userSessionsForClient, userClientLimit, context.getEvent());
+        } else {
+            logoutOldestSessions(userSessionsForRealm, userRealmLimit, context.getEvent());
+        }
+        context.success();
     }
 
     @Override
@@ -184,6 +235,26 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 var removedSessions = logoutOldestSessions(userSessions, limit, context.getEvent());
                 context.success();
                 return removedSessions;
+
+            case UserSessionLimitsAuthenticatorFactory.PROMPT_USER:
+                logger.info("Prompting user to terminate oldest session");
+                // Non-interactive flows (e.g. Direct Grant) cannot render HTML pages.
+                // Fall back to denying the session silently to avoid breaking API/CLI clients.
+                if (!"authenticate".equals(context.getFlowPath())) {
+                    logger.info("Non-interactive flow detected; falling back to deny new session");
+                    context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                    String denyErrorMessage = Optional.ofNullable(context.getAuthenticatorConfig())
+                            .map(AuthenticatorConfigModel::getConfig)
+                            .map(f -> f.get(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE))
+                            .orElse(SESSION_LIMIT_EXCEEDED);
+                    Response denyChallenge = context.form().setError(denyErrorMessage).createErrorPage(Response.Status.FORBIDDEN);
+                    context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, denyChallenge, eventDetails, denyErrorMessage);
+                    return Collections.emptyList();
+                }
+                // Display the interactive confirmation page and pause the flow
+                Response promptChallenge = context.form().createForm("session-limit-confirmation.ftl");
+                context.challenge(promptChallenge);
+                return Collections.emptyList();
         }
 
         return Collections.emptyList();
