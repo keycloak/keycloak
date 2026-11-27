@@ -529,6 +529,16 @@ Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remai
 
 Disabling signature validation reduces protection against forged identity-provider responses.
 
+=== `Use refresh tokens for client credentials grant` switch removed
+// https://github.com/keycloak/keycloak/issues/53477
+
+The *Use refresh tokens for client credentials grant* switch on clients, which was deprecated in {project_name} 26.8, is removed.
+The client credentials grant never returns a refresh token and never creates a persisted user session.
+The obsolete `client_credentials.use_refresh_token` client attribute is ignored.
+
+After upgrading, clients that relied on the switch no longer receive a `refresh_token` in the token response.
+Update these clients to send a new `grant_type=client_credentials` request when the access token expires, instead of using the `refresh_token` grant.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

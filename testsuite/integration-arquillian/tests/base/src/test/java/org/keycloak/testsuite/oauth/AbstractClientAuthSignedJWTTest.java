@@ -182,7 +182,6 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .id(KeycloakModelUtils.generateId())
                 .clientId("client1")
                 .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, generatedKeystoreClient1.getCertificateInfo().getCertificate())
-                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
                 .serviceAccountsEnabled(true)
                 .build();
@@ -659,16 +658,13 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.CLIENT_LOGIN)
-                .hasSessionId()
                 .clientId(clientId)
                 .userId(userId)
-                .sessionId(accessToken.getSessionState())
+                .sessionId(null)
                 .details(Details.TOKEN_ID, accessToken.getId())
-                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .details(Details.USERNAME, userName)
                 .details(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
                 .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
@@ -763,16 +759,6 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
         CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters);
         return new AccessTokenResponse(response);
-    }
-
-    protected HttpResponse doLogout(String refreshToken, String signedJwt) throws Exception {
-        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-
-        return sendRequest(oauth.getEndpoints().getLogout(), parameters);
     }
 
     protected AccessTokenResponse doClientCredentialsGrantRequest(String signedJwt) throws Exception {

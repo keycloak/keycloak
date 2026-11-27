@@ -768,7 +768,6 @@ public class OfflineTokenSessionManagementTest {
                     .adminUrl(OFFLINE_CLIENT_APP_URI)
                     .directAccessGrantsEnabled(true)
                     .serviceAccountsEnabled(true)
-                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                     .protocolMappers(audienceMapper));
 
             // Users WITHOUT test-app client roles

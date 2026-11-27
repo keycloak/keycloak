@@ -768,7 +768,6 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                     "/auth/realms/" + REALM_CONS_NAME + "/app2");
 
             OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRefreshTokenForClientCredentialsGrant(true);
 
             res.add(client);
             return res;

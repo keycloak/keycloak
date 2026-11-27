@@ -23,7 +23,6 @@ import java.util.Set;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -45,8 +44,6 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import org.jboss.logging.Logger;
-
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 /**
@@ -56,8 +53,6 @@ import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a> (et al.)
  */
 public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
-
-    private static final Logger logger = Logger.getLogger(ClientCredentialsGrantType.class);
 
     @Override
     public boolean isConfidentialOnlyGrantType() {
@@ -113,20 +108,9 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         setAuthorizationDetailsNoteIfIncluded(authSession);
 
-        // persisting of userSession by default
-        UserSessionModel.SessionPersistenceState sessionPersistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
-
-        if (!useRefreshToken()) {
-            // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
-            sessionPersistenceState = UserSessionModel.SessionPersistenceState.TRANSIENT;
-        } else {
-            logger.warnf("Client '%s' in the realm '%s' has enabled switch 'Use refresh tokens for client credentials grant'. The switch is deprecated and " +
-                    "will be removed in the future version. It is recommended to disable the switch and update your client application to not rely on this switch being enabled",
-                    client.getClientId(), realm.getName());
-        }
-
+        // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
-                clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
+                clientConnection.getRemoteHost(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         event.session(userSession);
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
@@ -151,8 +135,6 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
         updateUserSessionFromClientAuth(userSession);
 
-        // client credentials grant always removes the online session
-        clientSessionCtx.getClientSession().setNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
         return createTokenResponse(clientUser, userSession, clientSessionCtx, scope, true,
                 responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx, responseBuilder));
     }
@@ -169,7 +151,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
     @Override
     protected boolean useRefreshToken() {
-        return clientConfig.isUseRefreshTokenForClientCredentialsGrant();
+        return false;
     }
 
     /**

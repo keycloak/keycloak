@@ -53,7 +53,6 @@ import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
@@ -75,7 +74,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     // TEST SUCCESS
 
     @Test
-    public void testServiceAccountAndLogoutSuccess() throws Exception {
+    public void testServiceAccountSuccess() throws Exception {
         String client1Jwt = getClient1SignedJWT();
         JWSInput client1JwsInput = new JWSInput(client1Jwt);
         JsonWebToken client1JsonWebToken = client1JwsInput.readJsonContent(JsonWebToken.class);
@@ -83,61 +82,21 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertNull(response.getRefreshToken());
+        assertNull(accessToken.getSessionState());
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.CLIENT_LOGIN)
                 .clientId("client1")
                 .userId(client1SAUserId)
-                .hasSessionId()
-                .sessionId(accessToken.getSessionState())
+                .sessionId(null)
                 .details(Details.TOKEN_ID, accessToken.getId())
-                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
                 .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                 .details(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
                 .details(Details.CLIENT_ASSERTION_ISSUER, "client1")
                 .details(Details.CLIENT_ASSERTION_SUB, "client1")
                 .details(Details.CLIENT_JWT_KID, client1JwsInput.getHeader().getKeyId());
-
-        assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
-
-        client1Jwt = getClient1SignedJWT();
-        AccessTokenResponse refreshedResponse = doRefreshTokenRequest(response.getRefreshToken(), client1Jwt);
-        AccessToken refreshedAccessToken = oauth.verifyToken(refreshedResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshedResponse.getRefreshToken());
-
-        assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
-        assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
-
-        EventAssertion.expectRefreshTokenSuccess(events.poll()).details(Details.REFRESH_TOKEN_ID, refreshToken.getId()).sessionId(refreshToken.getSessionState())
-                .userId(client1SAUserId)
-                .clientId("client1")
-                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
-
-        // Logout and assert refresh will fail
-        HttpResponse logoutResponse = doLogout(response.getRefreshToken(), getClient1SignedJWT());
-        assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
-        EventAssertion.assertSuccess(events.poll())
-                .type(EventType.LOGOUT)
-                .sessionId(accessToken.getSessionState())
-                .clientId("client1")
-                .userId(client1SAUserId)
-                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .withoutDetails(Details.REDIRECT_URI);
-
-        response = doRefreshTokenRequest(response.getRefreshToken(), getClient1SignedJWT());
-        assertEquals(400, response.getStatusCode());
-        assertEquals("invalid_grant", response.getError());
-
-        EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).details(Details.REFRESH_TOKEN_ID, refreshToken.getId()).sessionId(refreshToken.getSessionState())
-                .clientId("client1")
-                .userId(null)
-                .withoutDetails(Details.TOKEN_ID)
-                .withoutDetails(Details.UPDATED_REFRESH_TOKEN_ID)
-                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .error(Errors.INVALID_TOKEN);
-
     }
 
     @Test

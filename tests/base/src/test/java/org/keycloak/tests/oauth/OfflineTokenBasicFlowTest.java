@@ -471,60 +471,23 @@ public class OfflineTokenBasicFlowTest {
     }
 
     @Test
-    public void offlineTokenServiceAccountFlow() {
+    public void offlineTokenServiceAccountFlowNoRefreshToken() {
         setupCustomerUserRoles();
 
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
         AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
 
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        Assertions.assertNotNull(tokenResponse.getAccessToken());
+        Assertions.assertNull(tokenResponse.getRefreshToken());
+
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        String offlineTokenString = tokenResponse.getRefreshToken();
-        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
-
-        EventRepresentation loginEvent = events.poll();
-        EventAssertion.assertSuccess(loginEvent)
-                .type(EventType.CLIENT_LOGIN)
-                .clientId("offline-client")
-                .userId(serviceAccountUserId)
-                .sessionId(token.getSessionId())
-                .details(Details.TOKEN_ID, token.getId())
-                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
-                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
-
-        Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-        Assertions.assertNotNull(offlineToken.getExp());
-
-        // check only the offline session is created
-        checkNumberOfSessions(serviceAccountUserId, "offline-client", offlineToken.getSessionId(), 0, 1);
-
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), serviceAccountUserId);
-
-        // Now retrieve another offline token and verify that previous offline token is still valid
-        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
-
-        AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
-        String offlineTokenString2 = tokenResponse.getRefreshToken();
-        RefreshToken offlineToken2 = oauth.parseRefreshToken(offlineTokenString2);
-
-        EventRepresentation loginEvent2 = events.poll();
-        EventAssertion.assertSuccess(loginEvent2)
-                .type(EventType.CLIENT_LOGIN)
-                .clientId("offline-client")
-                .userId(serviceAccountUserId)
-                .sessionId(token2.getSessionId())
-                .details(Details.TOKEN_ID, token2.getId())
-                .details(Details.REFRESH_TOKEN_ID, offlineToken2.getId())
-                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
-
-        // check only the offline session is created
-        checkNumberOfSessions(serviceAccountUserId, "offline-client", offlineToken2.getSessionId(), 0, 1);
-
-        // Refresh with both offline tokens is fine
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), serviceAccountUserId);
-        testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionId(), serviceAccountUserId);
+        Assertions.assertNull(token.getSessionId());
+        String clientUuid = AdminApiUtil.findClientByClientId(realm.admin(), "offline-client").toRepresentation().getId();
+        var serviceAccount = realm.admin().users().get(serviceAccountUserId);
+        Assertions.assertTrue(serviceAccount.getUserSessions().isEmpty());
+        Assertions.assertTrue(serviceAccount.getOfflineSessions(clientUuid).isEmpty());
     }
 
 
@@ -816,7 +779,7 @@ public class OfflineTokenBasicFlowTest {
     private void offlineTokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
-        AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         JWSHeader header;
         String idToken = tokenResponse.getIdToken();
@@ -847,21 +810,22 @@ public class OfflineTokenBasicFlowTest {
 
         EventRepresentation clientLoginEvent = events.poll();
         EventAssertion.assertSuccess(clientLoginEvent)
-                .type(EventType.CLIENT_LOGIN)
+                .type(EventType.LOGIN)
                 .clientId("offline-client")
-                .userId(serviceAccountUserId)
+                .userId(userId)
                 .sessionId(token.getSessionId())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .details(Details.TOKEN_ID, token.getId())
                 .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
+                .details(Details.USERNAME, "test-user@localhost");
 
         Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
 
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), serviceAccountUserId);
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), userId);
 
         // Now retrieve another offline token and decode that previous offline token is still valid
-        tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
+        tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         AccessToken token2 = oauth.verifyToken(tokenResponse.getAccessToken());
         String offlineTokenString2 = tokenResponse.getRefreshToken();
@@ -869,18 +833,19 @@ public class OfflineTokenBasicFlowTest {
 
         EventRepresentation clientLoginEvent2 = events.poll();
         EventAssertion.assertSuccess(clientLoginEvent2)
-                .type(EventType.CLIENT_LOGIN)
+                .type(EventType.LOGIN)
                 .clientId("offline-client")
-                .userId(serviceAccountUserId)
+                .userId(userId)
                 .sessionId(token2.getSessionId())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                 .details(Details.TOKEN_ID, token2.getId())
                 .details(Details.REFRESH_TOKEN_ID, offlineToken2.getId())
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
+                .details(Details.USERNAME, "test-user@localhost");
 
         // Refresh with both offline tokens is fine
-        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), serviceAccountUserId);
-        testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionId(), serviceAccountUserId);
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionId(), userId);
+        testRefreshWithOfflineToken(token2, offlineToken2, offlineTokenString2, token2.getSessionId(), userId);
     }
 
 
@@ -891,7 +856,7 @@ public class OfflineTokenBasicFlowTest {
         try {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS+" phone");
             oauth.client("offline-client", "secret1");
-            AccessTokenResponse tokenResponse = oauth.doClientCredentialsGrantAccessTokenRequest();
+            AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
             JWSHeader header;
             String idToken = tokenResponse.getIdToken();
@@ -922,14 +887,15 @@ public class OfflineTokenBasicFlowTest {
 
             EventRepresentation clientLoginEvent3 = events.poll();
             EventAssertion.assertSuccess(clientLoginEvent3)
-                    .type(EventType.CLIENT_LOGIN)
+                    .type(EventType.LOGIN)
                     .clientId("offline-client")
-                    .userId(serviceAccountUserId)
+                    .userId(userId)
                     .sessionId(token.getSessionId())
+                    .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
                     .details(Details.TOKEN_ID, token.getId())
                     .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                     .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                    .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client");
+                    .details(Details.USERNAME, "test-user@localhost");
 
             Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         } finally {
@@ -979,8 +945,7 @@ public class OfflineTokenBasicFlowTest {
                     .redirectUris(OFFLINE_CLIENT_APP_URI)
                     .adminUrl(OFFLINE_CLIENT_APP_URI)
                     .directAccessGrantsEnabled(true)
-                    .serviceAccountsEnabled(true)
-                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true"));
+                    .serviceAccountsEnabled(true));
 
             // Users WITHOUT test-app client roles
             builder.users(UserBuilder.create("test-user@localhost")

@@ -90,10 +90,10 @@ public class AdminSessionDeletionTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    public void deleteSessionWithUnfinishedLoginTab(boolean useRefreshTokens) {
-        // The default client-credentials grant has no sid. Also cover the stateful variant.
+    public void deleteSessionWithUnfinishedLoginTab(boolean legacyUseRefreshTokenAttribute) {
+        // The client-credentials grant has no sid. The obsolete legacy attribute must not change that.
         var backend = realm.admin().clients().findByClientId(BACKEND).get(0);
-        backend.getAttributes().put("client_credentials.use_refresh_token", Boolean.toString(useRefreshTokens));
+        backend.getAttributes().put("client_credentials.use_refresh_token", Boolean.toString(legacyUseRefreshTokenAttribute));
         realm.admin().clients().get(backend.getId()).update(backend);
         addAdminApiClientScope(realm.admin(), BACKEND);
 
@@ -101,7 +101,7 @@ public class AdminSessionDeletionTest {
                 .realm(realm.getName()).clientId(BACKEND).clientSecret(SECRET)
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS).build()) {
             AccessToken adminToken = oauth.parseToken(admin.tokenManager().getAccessTokenString(), AccessToken.class);
-            assertEquals(useRefreshTokens, adminToken.getSessionId() != null);
+            assertNull(adminToken.getSessionId());
 
             oauth.openLoginForm();
             loginPage.assertCurrent();
@@ -190,8 +190,7 @@ public class AdminSessionDeletionTest {
     public static class TestRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            return realm.clients(ClientBuilder.create(BACKEND).secret(SECRET).serviceAccountsEnabled(true)
-                            .attribute("client_credentials.use_refresh_token", "false"))
+            return realm.clients(ClientBuilder.create(BACKEND).secret(SECRET).serviceAccountsEnabled(true))
                     .users(UserBuilder.create(USERNAME).password(PASSWORD)
                                     .name("Alice", "Tester").email("alice@example.org").emailVerified(true),
                             UserBuilder.create(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + BACKEND)
