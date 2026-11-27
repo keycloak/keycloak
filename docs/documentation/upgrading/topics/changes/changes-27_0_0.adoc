@@ -869,6 +869,16 @@ A deleted client is registered again from its client metadata document on its ne
 
 A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
 
+=== Empty credential labels are rejected
+// https://github.com/keycloak/keycloak/issues/51440
+
+Empty or blank credential labels are now rejected in the Account REST API and in the OTP and Passkey setup flows.
+The first OTP device, like every later device, requires a device name.
+Clients that previously omitted a label when creating or renaming a credential must supply a non-empty value.
+When a Passkey or WebAuthn registration, including passwordless registration, is submitted with a missing or blank label, the `UPDATE_CREDENTIAL` event is recorded with the error `invalid_registration`, the detail `web_authn_registration_error` set to `webauthn-error-missing-label`, and a `web_authn_registration_error_detail` describing the failure.
+No credential is stored, and the user can retry the registration.
+The Admin REST API already rejected empty labels and is unchanged.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

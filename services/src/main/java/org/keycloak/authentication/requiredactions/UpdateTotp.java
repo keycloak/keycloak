@@ -35,8 +35,6 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -138,11 +136,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             context.challenge(challenge);
             return;
         }
-        OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "keycloak-otp");
-        final Stream<CredentialModel> otpCredentials  = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
-            ? context.getUser().credentialManager().getStoredCredentialsByTypeStream(OTPCredentialModel.TYPE)
-            : Stream.empty();
-        if (otpCredentials.count() >= 1 && Validation.isBlank(userLabel)) {
+        if (Validation.isBlank(userLabel)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_LABEL, Messages.MISSING_TOTP_DEVICE_NAME))

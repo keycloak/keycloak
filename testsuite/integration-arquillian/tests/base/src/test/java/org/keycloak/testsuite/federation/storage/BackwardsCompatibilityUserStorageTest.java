@@ -393,7 +393,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
             configureTotpRequiredActionPage.checkLogoutSessions();
         }
         String totpSecret = configureTotpRequiredActionPage.getTotpSecret();
-        configureTotpRequiredActionPage.configure(totp.generateTOTP(totpSecret));
+        configureTotpRequiredActionPage.configure(totp.generateTOTP(totpSecret), "otp");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testAppHelper.completeLogin();

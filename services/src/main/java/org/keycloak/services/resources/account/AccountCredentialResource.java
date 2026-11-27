@@ -50,6 +50,7 @@ import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.util.JsonSerialization;
@@ -343,6 +344,9 @@ public class AccountCredentialResource {
 
         try {
             String label = JsonSerialization.readValue(userLabel, String.class);
+            if (label == null || label.trim().isEmpty()) {
+                throw new ErrorResponseException("missingCredentialLabel", "Credential label must not be empty", Response.Status.BAD_REQUEST);
+            }
             user.credentialManager().updateCredentialLabel(credentialId, label);
         } catch (IOException ioe) {
             throw ErrorResponse.error(Messages.INVALID_REQUEST, Response.Status.BAD_REQUEST);

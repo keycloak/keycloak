@@ -90,7 +90,7 @@ public abstract class AbstractCustomAuthFlowOTPTest extends AbstractCustomAccoun
         oauth.openLoginForm();
         testRealmLoginPage.login(testUser.getUsername(), PASSWORD);
         String totpSecret = loginConfigTotpPage.getTotpSecret();
-        loginConfigTotpPage.configure(totp.generateTOTP(totpSecret));
+        loginConfigTotpPage.configure(totp.generateTOTP(totpSecret), "otp");
         AccountHelper.logout(managedRealm.admin(), testUser.getUsername());
 
         //verify that user has OTP configured
@@ -123,7 +123,7 @@ public abstract class AbstractCustomAuthFlowOTPTest extends AbstractCustomAccoun
         final String generatedOtp = totp.generateTOTP(totpSecret);
         assertThat(generatedOtp, notNullValue());
 
-        loginConfigTotpPage.configure(generatedOtp);
+        loginConfigTotpPage.configure(generatedOtp, "otp");
         AccountHelper.logout(managedRealm.admin(), testUser.getUsername());
 
         oauth.openLoginForm();
