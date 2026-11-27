@@ -528,4 +528,13 @@ public interface OrganizationProvider extends Provider {
     default boolean hasOrganizations() {
         return count() > 0;
     }
+
+    /**
+     * Used to provide an optimized check if any disabled organization exists in the realm.
+     *
+     * @return true if at least one organization in the realm is disabled
+     */
+    default boolean hasDisabledOrganizations() {
+        return getAllStream().anyMatch(organization -> !organization.isEnabled());
+    }
 }

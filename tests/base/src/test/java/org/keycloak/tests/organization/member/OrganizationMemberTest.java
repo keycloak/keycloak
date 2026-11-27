@@ -403,6 +403,89 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testManagedMemberEnabledStateFollowsOrganizationEnabledState() {
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.MANAGED);
+        OrganizationRepresentation orgRep = organization.toRepresentation();
+        addMember(organization, "unmanaged@neworg.org");
+
+        // onboard a managed member by authenticating using the organization's provider.
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), oauth, loginUsernamePage, loginPage, providerRealm);
+
+        // no disabled organizations in the realm, all members are enabled
+        assertManagedMemberEnabled(organization, true);
+
+        orgRep.setEnabled(false);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        assertManagedMemberEnabled(organization, false);
+
+        // re-enabling the organization must be reflected without stale state from previous lookups
+        orgRep.setEnabled(true);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        assertManagedMemberEnabled(organization, true);
+
+        orgRep.setEnabled(false);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        assertManagedMemberEnabled(organization, false);
+    }
+
+    @Test
+    public void testManagedMemberEnabledWhenAnotherOrganizationIsDisabled() {
+        OrganizationResource organization = createOrganizationWithBroker(providerRealm, true, MembershipType.MANAGED);
+
+        // onboard a managed member by authenticating using the organization's provider.
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), oauth, loginUsernamePage, loginPage, providerRealm);
+        UserRepresentation alice = getUserRepresentation(aliceFromProviderRealm.getEmail());
+
+        // the managed member is also an unmanaged member of another organization that gets disabled
+        OrganizationRepresentation otherRep = createOrganization("other-org");
+        OrganizationResource other = realm.admin().organizations().get(otherRep.getId());
+        try (Response response = other.members().addMember(alice.getId())) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        MemberRepresentation unmanagedMember = addMember(other, "member@other-org.org");
+
+        otherRep.setEnabled(false);
+        try (Response response = other.update(otherRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // unmanaged memberships of a disabled organization do not make users read-only
+        assertThat(realm.admin().users().get(alice.getId()).toRepresentation().isEnabled(), is(true));
+        assertThat(realm.admin().users().get(unmanagedMember.getId()).toRepresentation().isEnabled(), is(true));
+        other.members().list(-1, -1).forEach(member -> assertThat(member.getUsername(), member.isEnabled(), is(true)));
+        organization.members().list(-1, -1).forEach(member -> assertThat(member.getUsername(), member.isEnabled(), is(true)));
+    }
+
+    private void assertManagedMemberEnabled(OrganizationResource organization, boolean expected) {
+        String managedEmail = aliceFromProviderRealm.getEmail();
+
+        List<MemberRepresentation> members = organization.members().list(-1, -1);
+        assertThat(members, hasSize(2));
+        for (MemberRepresentation member : members) {
+            boolean managed = managedEmail.equals(member.getEmail());
+            assertThat(member.getUsername(), member.isEnabled(), is(!managed || expected));
+        }
+
+        List<UserRepresentation> users = realm.admin().users().search("*neworg*", 0, 10);
+        assertThat(users, hasSize(2));
+        for (UserRepresentation user : users) {
+            boolean managed = managedEmail.equals(user.getEmail());
+            assertThat(user.getUsername(), user.isEnabled(), is(!managed || expected));
+        }
+
+        UserRepresentation managedUser = getUserRepresentation(managedEmail);
+        assertThat(realm.admin().users().get(managedUser.getId()).toRepresentation().isEnabled(), is(expected));
+    }
+
+    @Test
     public void testDeleteUnmanagedMember() {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);

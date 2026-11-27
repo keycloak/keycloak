@@ -564,10 +564,20 @@ public class Organizations {
 
         // disable FGAP filtering for this system-level check to avoid infinite recursion:
         // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
-        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
-                organizationProvider.getByMember(delegate)
-                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+            boolean organizationsEnabled = organizationProvider.isEnabled();
+
+            // a member is read-only only if managed by a disabled organization, so there is no need to check
+            // the memberships of the user if organizations are enabled and none of them is disabled
+            if (organizationsEnabled && !organizationProvider.hasDisabledOrganizations()) {
+                return false;
+            }
+
+            // user is a managed member of a disabled organization OR organizations are disabled and user is a managed member.
+            // check the (cached) enabled state of the organization before the more expensive managed membership check
+            return organizationProvider.getByMember(delegate)
+                    .anyMatch((org) -> (!organizationsEnabled || !org.isEnabled()) && org.isManaged(delegate));
+        });
     }
 
     public static OrganizationModel resolveByDomain(List<OrganizationModel> organizations, String domain) {

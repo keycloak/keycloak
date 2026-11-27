@@ -39,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.CachedCount;
+import org.keycloak.models.cache.infinispan.CachedExists;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.idp.IdentityProviderListQuery;
 import org.keycloak.models.cache.infinispan.organization.CachedOrganization;
@@ -55,6 +56,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,6 +65,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
 import static org.keycloak.models.cache.infinispan.organization.CachedOrganization.DOMAIN_NAMES_CACHE_MAX_SIZE;
+import static org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider.cacheKeyOrgDisabledExists;
 import static org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider.cacheKeyOrgMemberCount;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -318,6 +321,113 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             cached = realmCache.getCache().get(cachedKey, CachedCount.class);
             assertNotNull(cached);
             assertEquals(0, cached.getCount());
+        });
+    }
+
+    @Test
+    @DatabaseTest
+    public void testHasDisabledOrganizations() {
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            String cacheKey = cacheKeyOrgDisabledExists(realm);
+
+            assertFalse(orgProvider.hasDisabledOrganizations());
+            assertFalse(session.getProvider(OrganizationProvider.class, "jpa").hasDisabledOrganizations());
+            CachedExists cached = realmCache.getCache().get(cacheKey, CachedExists.class);
+            assertNotNull(cached);
+            assertFalse(cached.isExists());
+
+            orgProvider.getByDomainName("orga.org").setEnabled(false);
+        });
+
+        // disabling an organization invalidates the cached flag
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            String cacheKey = cacheKeyOrgDisabledExists(realm);
+
+            assertNull(realmCache.getCache().get(cacheKey, CachedExists.class));
+            assertTrue(orgProvider.hasDisabledOrganizations());
+            assertTrue(session.getProvider(OrganizationProvider.class, "jpa").hasDisabledOrganizations());
+            CachedExists cached = realmCache.getCache().get(cacheKey, CachedExists.class);
+            assertNotNull(cached);
+            assertTrue(cached.isExists());
+
+            orgProvider.getByDomainName("orga.org").setEnabled(true);
+        });
+
+        // enabling an organization invalidates the cached flag
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+
+            assertNull(realmCache.getCache().get(cacheKeyOrgDisabledExists(realm), CachedExists.class));
+            assertFalse(orgProvider.hasDisabledOrganizations());
+        });
+
+        // creating a disabled organization invalidates the cached flag
+        OrganizationRepresentation orgc = createOrganization("orgc");
+        orgc.setEnabled(false);
+        realm.admin().organizations().get(orgc.getId()).update(orgc).close();
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertTrue(orgProvider.hasDisabledOrganizations());
+        });
+
+        // removing the only disabled organization invalidates the cached flag
+        realm.admin().organizations().get(orgc.getId()).delete().close();
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+
+            assertNull(realmCache.getCache().get(cacheKeyOrgDisabledExists(realm), CachedExists.class));
+            assertFalse(orgProvider.hasDisabledOrganizations());
+        });
+    }
+
+    @Test
+    public void testHasDisabledOrganizationsDoesNotCacheUncommittedChanges() {
+        // disabling an organization invalidates the cached flag, leaving no entry in the cache
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            orgProvider.getByDomainName("orga.org").setEnabled(false);
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            String cacheKey = cacheKeyOrgDisabledExists(realm);
+
+            assertNull(realmCache.getCache().get(cacheKey, CachedExists.class));
+
+            // enable the only disabled organization without committing yet
+            orgProvider.getByDomainName("orga.org").setEnabled(true);
+
+            // the current transaction sees its own change
+            assertFalse(orgProvider.hasDisabledOrganizations());
+
+            // but the uncommitted result must not be cached, as other transactions would see it before commit
+            assertNull(realmCache.getCache().get(cacheKey, CachedExists.class));
+        });
+
+        // once committed, the change is visible and cached
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+
+            assertFalse(orgProvider.hasDisabledOrganizations());
+            CachedExists cached = realmCache.getCache().get(cacheKeyOrgDisabledExists(realm), CachedExists.class);
+            assertNotNull(cached);
+            assertFalse(cached.isExists());
         });
     }
 

@@ -1172,4 +1172,13 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
        return !query.getResultList().isEmpty();
     }
+
+    @Override
+    public boolean hasDisabledOrganizations() {
+        TypedQuery<String> query = em.createNamedQuery("existsDisabledByRealm", String.class);
+        query.setParameter("realmId", getRealm().getId());
+        query.setMaxResults(1);
+
+        return !query.getResultList().isEmpty();
+    }
 }
