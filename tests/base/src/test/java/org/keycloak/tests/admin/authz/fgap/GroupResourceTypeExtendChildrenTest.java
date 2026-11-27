@@ -422,6 +422,7 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
     }
 
     @Test
+    @org.keycloak.tests.suites.DatabaseTest
     public void testSearchIncludesDescendants() {
         createGroupPermission(department, Set.of(VIEW), true, allowMyAdmin);
         assertThat(searchGroupIds(subteam.getName()), hasItem(subteam.getId()));

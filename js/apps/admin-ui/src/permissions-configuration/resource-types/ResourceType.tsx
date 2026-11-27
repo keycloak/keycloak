@@ -74,7 +74,9 @@ export const ResourceType = ({
             onChange={() => {
               setIsSpecificResources(false);
               form.setValue("resources", []);
-              form.setValue("config.extendChildren", "false");
+              if (normalizedResourceType === "groups") {
+                form.setValue("config.extendChildren", "false");
+              }
             }}
             className="pf-v5-u-mb-md"
           />
