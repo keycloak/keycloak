@@ -587,6 +587,14 @@ on an affected client, set `post.logout.redirect.uris` to `-`; otherwise, update
 its post-logout redirect URIs to satisfy those rules. Setting `-` also works
 after upgrading, so an affected client can still be remediated.
 
+=== Declarative UI SPI enabled by default
+// https://github.com/keycloak/keycloak/issues/54149
+
+The `declarative-ui` feature is now supported and enabled by default.
+You no longer need to start the server with `--features=declarative-ui` to use `UiPageProvider` and `UiTabProvider` extensions.
+If you previously enabled the feature explicitly, you can remove that option from your configuration.
+To disable the feature, start the server with `--features-disabled=declarative-ui`.
+
 === Scope mapping listings filter roles by visibility
 // https://github.com/keycloak/keycloak/issues/53480
 
