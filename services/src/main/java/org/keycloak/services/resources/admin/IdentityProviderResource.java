@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,6 +91,7 @@ public class IdentityProviderResource {
 
     protected static final Logger logger = Logger.getLogger(IdentityProviderResource.class);
 
+    private static final Pattern VAULT_EXPRESSION = Pattern.compile("^\\$\\{vault\\.(.+?)}$");
     private final AdminPermissionEvaluator auth;
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -238,6 +240,17 @@ public class IdentityProviderResource {
             }
         }
 
+        requireManageRealmForVaultExpressions(auth, providerRep.getConfig(), identityProviderModel.getConfig());
+
+        String clientSecret = updated.getConfig() == null ? null : updated.getConfig().get("clientSecret");
+        if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)
+                && clientSecret != null && VAULT_EXPRESSION.matcher(clientSecret).matches()
+                && !updated.canReuseMaskedClientSecret(identityProviderModel)) {
+            throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                            + "' role can change the destination or authentication settings of a vault-backed client secret.",
+                    Response.Status.FORBIDDEN);
+        }
+
         if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
             if (updated.isAllowAdminRoleMapping() != identityProviderModel.isAllowAdminRoleMapping()) {
                 throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
@@ -249,6 +262,31 @@ public class IdentityProviderResource {
         session.identityProviders().update(updated);
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());
+    }
+
+    /**
+     * Vault keys are shared by every component of a realm, so a vault expression in an identity provider configuration
+     * can resolve a secret that belongs to another component (for example a client). Only administrators with
+     * {@code manage-realm} may set a new or changed vault expression.
+     *
+     * @param newConfig      the submitted configuration
+     * @param existingConfig the stored configuration, or {@code null} when the identity provider is being created
+     */
+    static void requireManageRealmForVaultExpressions(AdminPermissionEvaluator auth, Map<String, String> newConfig,
+            Map<String, String> existingConfig) {
+        if (newConfig == null || auth.hasOneAdminRole(AdminRoles.MANAGE_REALM)) {
+            return;
+        }
+
+        for (Map.Entry<String, String> entry : newConfig.entrySet()) {
+            String value = entry.getValue();
+            if (value != null && VAULT_EXPRESSION.matcher(value).matches()
+                    && (existingConfig == null || !Objects.equals(value, existingConfig.get(entry.getKey())))) {
+                throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                        + "' role can set vault expressions in the identity provider configuration.",
+                        Response.Status.FORBIDDEN);
+            }
+        }
     }
 
     private IdentityProviderFactory<?> getIdentityProviderFactory() {
