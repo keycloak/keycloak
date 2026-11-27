@@ -69,7 +69,13 @@ public class ImmutableAttributeValidator implements SimpleValidator {
         List<String> currentValue = rawValues.collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
-        if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
+        boolean unchangedFederatedUsernameIgnoringCase = UserModel.USERNAME.equals(inputHint)
+                && user.isFederated()
+                && collectionEqualsIgnoringCase(currentValue, values);
+
+        if (!collectionEquals(currentValue, values)
+                && !unchangedFederatedUsernameIgnoringCase
+                && isReadOnly(attributeContext)) {
             if (currentValue.isEmpty() && !notBlankValidator().validate(values).isValid()) {
                 return context;
             }
@@ -100,6 +106,22 @@ public class ImmutableAttributeValidator implements SimpleValidator {
         }
 
         return context;
+    }
+
+    private boolean collectionEqualsIgnoringCase(List<String> currentValue, List<String> values) {
+        if (currentValue.size() != values.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < currentValue.size(); i++) {
+            String current = currentValue.get(i);
+            String value = values.get(i);
+            if (current == null ? value != null : !current.equalsIgnoreCase(value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private boolean isReadOnly(AttributeContext attributeContext) {

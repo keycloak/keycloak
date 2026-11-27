@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -46,6 +47,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -197,6 +199,66 @@ public class UserProfileTest extends AbstractUserProfileTest {
                 assertTrue(ve.hasError(LengthValidator.MESSAGE_INVALID_LENGTH));
             }
         });
+    }
+
+    @Test
+    public void testReadOnlyUsernameAllowsCaseOnlyDifference() {
+        getTestingClient().server(TEST_REALM_NAME)
+                .run((RunOnServer) UserProfileTest::testReadOnlyUsernameAllowsCaseOnlyDifference);
+    }
+
+    private static void testReadOnlyUsernameAllowsCaseOnlyDifference(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        boolean editUsernameAllowed = realm.isEditUsernameAllowed();
+        UserModel user = session.users().addUser(realm, "ldap-case-user");
+        user.setEmail("ldap-case-user@keycloak.org");
+        user.setFirstName("LDAP");
+        user.setLastName("User");
+
+        try {
+            realm.setEditUsernameAllowed(false);
+
+            UserModel ldapUser = new UserModelDelegate(user) {
+                @Override
+                public boolean isFederated() {
+                    return true;
+                }
+
+                @Override
+                public String getFederationLink() {
+                    return "test-federation-provider";
+                }
+
+                @Override
+                public String getFirstAttribute(String name) {
+                    if (UserModel.USERNAME.equals(name)) {
+                        return "LDAP-Case-User";
+                    }
+                    return super.getFirstAttribute(name);
+                }
+
+                @Override
+                public Stream<String> getAttributeStream(String name) {
+                    if (UserModel.USERNAME.equals(name)) {
+                        return Stream.of("LDAP-Case-User");
+                    }
+                    return super.getAttributeStream(name);
+                }
+            };
+
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put(UserModel.USERNAME, "ldap-case-user");
+            attributes.put(UserModel.EMAIL, user.getEmail());
+            attributes.put(UserModel.FIRST_NAME, user.getFirstName());
+            attributes.put(UserModel.LAST_NAME, user.getLastName());
+
+            UserProfileProvider provider = getUserProfileProvider(session);
+            UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes, ldapUser);
+            profile.validate();
+        } finally {
+            realm.setEditUsernameAllowed(editUsernameAllowed);
+            session.users().removeUser(realm, user);
+        }
     }
 
     private static void testIdempotentProfile(KeycloakSession session) {
