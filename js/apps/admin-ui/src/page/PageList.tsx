@@ -19,23 +19,36 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { ForbiddenSection } from "../ForbiddenSection";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PAGE_PROVIDER } from "./constants";
 import { addDetailPage, PageListParams, toDetailPage } from "./routes";
+import {
+  canManageUiExtension,
+  canViewUiExtension,
+  getRequiredViewRoles,
+} from "./uiExtensionAccess";
 
 type DetailLinkProps = {
   obj: ComponentRepresentation;
   field: string;
+  detailTabPath?: string;
 };
 
-const DetailLink = ({ obj, field }: DetailLinkProps) => {
+const DetailLink = ({ obj, field, detailTabPath }: DetailLinkProps) => {
   const { realm } = useRealm();
   const value = get(obj, field);
   return (
     <Link
       key={value}
-      to={toDetailPage({ realm, providerId: obj.providerId!, id: obj.id! })}
+      to={toDetailPage({
+        realm,
+        providerId: obj.providerId!,
+        id: obj.id!,
+        detailTabPath,
+      })}
     >
       {value}
     </Link>
@@ -54,9 +67,10 @@ export default function PageList() {
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const [selectedItem, setSelectedItem] = useState<ComponentRepresentation>();
   const { componentTypes } = useServerInfo();
+  const access = useAccess();
   const pages = componentTypes?.[PAGE_PROVIDER];
 
-  const page = pages?.find((p) => p.id === providerId)!;
+  const page = pages?.find((p) => p.id === providerId);
 
   const loader = {
     signal: { providerId },
@@ -88,6 +102,17 @@ export default function PageList() {
     },
   });
 
+  if (!page) {
+    throw new Error(t("notFound"));
+  }
+
+  if (!canViewUiExtension(page, access)) {
+    return <ForbiddenSection permissionNeeded={getRequiredViewRoles(page)} />;
+  }
+
+  const canManage = canManageUiExtension(page, access);
+  const detailTabPath = page.metadata.detailTabPath as string | undefined;
+
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
       <DeleteConfirm />
@@ -95,28 +120,37 @@ export default function PageList() {
       <KeycloakDataTable
         key={key}
         toolbarItem={
-          <ToolbarItem>
-            <Button
-              component={(props) => (
-                <Link
-                  {...props}
-                  to={addDetailPage({ realm: realmName, providerId: page.id })}
-                />
-              )}
-            >
-              {t("createItem")}
-            </Button>
-          </ToolbarItem>
+          canManage ? (
+            <ToolbarItem>
+              <Button
+                component={(props) => (
+                  <Link
+                    {...props}
+                    to={addDetailPage({
+                      realm: realmName,
+                      providerId: page.id,
+                    })}
+                  />
+                )}
+              >
+                {t("createItem")}
+              </Button>
+            </ToolbarItem>
+          ) : undefined
         }
-        actionResolver={(item: IRowData) => [
-          {
-            title: t("delete"),
-            onClick() {
-              setSelectedItem(item.data);
-              toggleDeleteDialog();
-            },
-          },
-        ]}
+        actionResolver={
+          canManage
+            ? (item: IRowData) => [
+                {
+                  title: t("delete"),
+                  onClick() {
+                    setSelectedItem(item.data);
+                    toggleDeleteDialog();
+                  },
+                },
+              ]
+            : undefined
+        }
         searchPlaceholderKey="searchItem"
         loader={loader}
         columns={[
@@ -129,7 +163,11 @@ export default function PageList() {
             cellRenderer:
               index === 0
                 ? (obj: ComponentRepresentation) => (
-                    <DetailLink obj={obj} field={`config.${name}`} />
+                    <DetailLink
+                      obj={obj}
+                      field={`config.${name}`}
+                      detailTabPath={detailTabPath}
+                    />
                   )
                 : undefined,
           })),
@@ -140,11 +178,14 @@ export default function PageList() {
             hasIcon
             message={t("noItems")}
             instructions={t("noItemsInstructions")}
-            primaryActionText={t("createItem")}
-            onPrimaryAction={() =>
-              void navigate(
-                addDetailPage({ realm: realmName, providerId: page.id }),
-              )
+            primaryActionText={canManage ? t("createItem") : undefined}
+            onPrimaryAction={
+              canManage
+                ? () =>
+                    void navigate(
+                      addDetailPage({ realm: realmName, providerId: page.id }),
+                    )
+                : undefined
             }
           />
         }

@@ -21,8 +21,10 @@ import {
   useParams,
 } from "react-router-dom";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { useAccess } from "../../context/access/Access";
 import { PageHandler } from "../../page/PageHandler";
 import { TAB_PROVIDER } from "../../page/constants";
+import { canViewUiExtension, getTabTitle } from "../../page/uiExtensionAccess";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useTranslation } from "react-i18next";
 
@@ -48,7 +50,10 @@ export const RoutableTabs = ({
   const { pathname } = useLocation();
   const params = useParams();
   const { componentTypes } = useServerInfo();
-  const tabs = componentTypes?.[TAB_PROVIDER] || [];
+  const access = useAccess();
+  const tabs = (componentTypes?.[TAB_PROVIDER] || []).filter((tab) =>
+    canViewUiExtension(tab, access),
+  );
   const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation();
 
@@ -100,7 +105,11 @@ export const RoutableTabs = ({
       {children as any}
       {isFeatureEnabled(Feature.DeclarativeUI) &&
         matchedTabs.map<any>((tab) => (
-          <DynamicTab key={tab.id} eventKey={tab.pathname} title={t(tab.id)}>
+          <DynamicTab
+            key={tab.id}
+            eventKey={tab.pathname}
+            title={getTabTitle(tab, t)}
+          >
             <PageHandler page={tab} providerType={TAB_PROVIDER} />
           </DynamicTab>
         ))}
