@@ -1144,6 +1144,31 @@ public class UserTest extends AbstractScimTest {
             assertRootAttributes(actual, expected);
         }
 
+        // the operations of one request apply in sequence (RFC 7644 section 3.5.2), so a filter sees what an earlier
+        // operation of the same request did: after the email is removed, a filter on its type matches nothing
+        try {
+            client.users().patch(expected.getId(), PatchRequest.create()
+                    .remove("emails")
+                    .replace("emails[type eq \"work\"].value", "jane@entra3.org")
+                    .build());
+            fail("Should have thrown an exception - the email was removed by the first operation");
+        } catch (ScimClientException e) {
+            assertEquals(400, e.getError().getStatusInt());
+            assertEquals("noTarget", e.getError().getScimType());
+        }
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // and after an email is added again, the filter selects the added one
+        expected.setEmail(expected.getEmail().replace("entra2.org", "entra4.org"));
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("emails")
+                .add("emails", "[{\"value\": \"" + expected.getEmail().replace("entra4.org", "entra3.org") + "\", \"type\": \"work\", \"primary\": true}]")
+                .replace("emails[type eq \"work\"].value", expected.getEmail())
+                .build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
         // patch an attribute from an extension schema
         addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA,  "employeeNumber");
         assertNull(actual.getEnterpriseUser());

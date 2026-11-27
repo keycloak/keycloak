@@ -126,7 +126,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             if (selectsByCurrentEntries(path, attribute, resource)) {
                 // a filter on a sub-attribute other than "value", e.g. Entra ID's emails[type eq "work"].value
                 // (RFC 7644 section 3.5.2): select among the entries the resource holds now
-                ArrayNode matched = path.select(attribute, currentEntries(resource, attribute));
+                ArrayNode matched = path.select(attribute, currentEntries(resource, model, attribute));
 
                 if (matched.isEmpty()) {
                     // RFC 7644 sections 3.5.2.2, 3.5.2.3 and 3.12: a filter that matches no value is an error. Going on
@@ -153,8 +153,8 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
      * Whether a filtered {@code remove} (or the remove half of a {@code replace}) selects among the entries the
      * resource holds rather than turning the filter into a value. Only for a complex multi-valued attribute of the
      * core schema that the resource carries by default, with a filter naming a sub-attribute other than
-     * {@code value}. An attribute returned only on request, such as a group's {@code members}, is not in the
-     * resource read before the patch, so it keeps the {@code value}-only rule.
+     * {@code value}. An attribute returned only on request, such as a group's {@code members}, keeps the
+     * {@code value}-only rule, so a filtered remove never reads every member of a large group.
      */
     private boolean selectsByCurrentEntries(Path path, Attribute<M, R> attribute, R resource) {
         return resource != null
@@ -166,8 +166,30 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                 && !path.filtersOnlyOnValue();
     }
 
-    private JsonNode currentEntries(R resource, Attribute<M, R> attribute) {
-        JsonNode representation = JsonSerialization.mapper.valueToTree(resource);
+    /**
+     * The attribute's entries as the model holds them now. They are read from the model rather than from
+     * {@code resource}, which is the representation read before the request, so that an earlier operation of the same
+     * PATCH request is taken into account (RFC 7644 section 3.5.2 applies the operations in sequence).
+     */
+    @SuppressWarnings("unchecked")
+    private JsonNode currentEntries(R resource, M model, Attribute<M, R> attribute) {
+        String modelAttributeName = attribute.getModelAttributeName();
+
+        if (modelAttributeName == null) {
+            return null;
+        }
+
+        R current;
+
+        try {
+            current = (R) resource.getClass().getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not create instance of resource type " + resource.getClass(), e);
+        }
+
+        attribute.set(current, getAttributeValue(model, modelAttributeName));
+
+        JsonNode representation = JsonSerialization.mapper.valueToTree(current);
         return representation == null ? null : representation.get(attribute.getName());
     }
 
