@@ -33,6 +33,7 @@ import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 export type PartialImportProps = {
   open: boolean;
@@ -43,7 +44,12 @@ export type PartialImportProps = {
 // or a single realm object.
 type ImportedMultiRealm = RealmRepresentation | RealmRepresentation[];
 
-type NonRoleResource = "users" | "clients" | "groups" | "identityProviders";
+type NonRoleResource =
+  | "users"
+  | "clients"
+  | "groups"
+  | "identityProviders"
+  | "organizations";
 type RoleResource = "realmRoles" | "clientRoles";
 type Resource = NonRoleResource | RoleResource;
 
@@ -56,6 +62,7 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
   clients: false,
   groups: false,
   identityProviders: false,
+  organizations: false,
   realmRoles: false,
   clientRoles: false,
 };
@@ -64,7 +71,11 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const organizationsEnabled =
+    isFeatureEnabled(Feature.Organizations) &&
+    realmRepresentation.organizationsEnabled;
 
   const [importedFile, setImportedFile] = useState<ImportedMultiRealm>();
   const isFileSelected = !!importedFile;
@@ -165,6 +176,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       targetHasResource("groups") ||
       targetHasResource("clients") ||
       targetHasResource("identityProviders") ||
+      targetHasOrganizations() ||
       targetHasRealmRoles() ||
       targetHasClientRoles()
     );
@@ -174,6 +186,9 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     const value = targetRealm[resource];
     return value !== undefined && value.length > 0;
   };
+
+  const targetHasOrganizations = () =>
+    organizationsEnabled && targetHasResource("organizations");
 
   const targetHasRealmRoles = () => {
     const value = targetRealm.roles?.realm;
@@ -246,6 +261,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     if (resourcesToImport["groups"]) jsonToImport.groups = targetRealm.groups;
     if (resourcesToImport["identityProviders"])
       jsonToImport.identityProviders = targetRealm.identityProviders;
+    if (resourcesToImport["organizations"])
+      jsonToImport.organizations = targetRealm.organizations;
     if (resourcesToImport["clients"])
       jsonToImport.clients = targetRealm.clients;
     if (resourcesToImport["realmRoles"] || resourcesToImport["clientRoles"]) {
@@ -356,6 +373,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                       "identityProviders",
                       t("identityProviders"),
                     )}
+                  {targetHasOrganizations() &&
+                    resourceDataListItem("organizations", t("organizations"))}
                   {targetHasRealmRoles() &&
                     resourceDataListItem("realmRoles", t("realmRoles"))}
                   {targetHasClientRoles() &&
@@ -436,6 +455,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       ["USER", t("users")],
       ["CLIENT_ROLE", t("clientRoles")],
       ["IDP", t("identityProviders")],
+      ["ORGANIZATION", t("organizations")],
       ["GROUP", t("groups")],
     ]);
 
