@@ -48,6 +48,8 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -379,7 +381,11 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
             targetUserSession.setNote(IMPERSONATOR_CLIENT.toString(), client.getId());
         }
 
-        if (targetUserSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
+        // Remove the session id only when the token is not linked to a real session (transient session type). A transient
+        // copy of an existing online or offline session (ONLINE_TRANSIENT_CLIENT, OFFLINE_TRANSIENT_CLIENT) keeps it,
+        // otherwise the token is rejected at introspection. Same check as in StandardTokenExchangeProvider.
+        TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
+        if (encoder.getTokenContextFromTokenId(responseBuilder.getAccessToken().getId()).getSessionType() == AccessTokenContext.SessionType.TRANSIENT) {
             responseBuilder.getAccessToken().setSessionId(null);
         }
 
