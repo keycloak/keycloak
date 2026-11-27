@@ -17,7 +17,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
-import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.cert.CertPathBuilder;
@@ -102,7 +101,7 @@ public class FIPS1402Provider implements CryptoProvider {
 
         if (existingBcFipsProvider == null) {
             final String isSystemFipsEnabled = isSystemFipsEnabled();
-            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 1));
+            Security.insertProviderAt(this.bcFipsProvider, 1);
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
             Security.insertProviderAt(bcJsseProvider, 2);
             // force the key and trust manager factories if default values not present in BCJSSE
@@ -337,34 +336,6 @@ public class FIPS1402Provider implements CryptoProvider {
             }
 
         };
-    }
-
-    // BCFIPS require "SecureRandom.getInstanceStrong" to be available. But it may not be available on RHEL 8 on OpenJDK 17 due the https://bugzilla.redhat.com/show_bug.cgi?id=2155060
-    private void checkSecureRandom(Runnable insertBcFipsProvider) {
-        try {
-            SecureRandom sr = SecureRandom.getInstanceStrong();
-            log.debugf("Strong secure random available. Algorithm: %s, Provider: %s", sr.getAlgorithm(), sr.getProvider());
-            insertBcFipsProvider.run();
-        } catch (NoSuchAlgorithmException nsae) {
-
-            // Fallback to regular SecureRandom
-            // We could delete this once https://issues.redhat.com/browse/RHEL-3478 is fixed
-            SecureRandom secRandom = new SecureRandom();
-            String origStrongAlgs = Security.getProperty("securerandom.strongAlgorithms");
-            String usedAlg = secRandom.getAlgorithm() + ":" + secRandom.getProvider().getName();
-            log.debugf("Strong secure random not available. Tried algorithms: %s. Using algorithm as a fallback for strong secure random: %s", origStrongAlgs, usedAlg);
-
-            Security.setProperty("securerandom.strongAlgorithms", usedAlg);
-
-            try {
-                // Need to insert BCFIPS provider to security providers with "strong algorithm" available
-                insertBcFipsProvider.run();
-                SecureRandom.getInstance("DEFAULT", "BCFIPS");
-                log.debugf("Initialized BCFIPS secured random");
-            } catch (NoSuchAlgorithmException | NoSuchProviderException nsaee) {
-                throw new IllegalStateException("Not possible to initiate BCFIPS secure random", nsaee);
-            }
-        }
     }
 
     /**

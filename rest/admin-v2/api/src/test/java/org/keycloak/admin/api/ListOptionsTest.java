@@ -1,6 +1,8 @@
 package org.keycloak.admin.api;
 
-import java.util.Set;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,16 +13,16 @@ public class ListOptionsTest {
     @Test
     void testGetFieldsEmpty() {
         ListOptions options = new ListOptions();
-        options.setFields(Set.of());
+        options.setFields(Collections.emptySet());
         assertEquals("", options.fields);
-        assertEquals(Set.of(), options.getFields());
+        assertEquals(Collections.emptySet(), options.getFields());
     }
     
     @Test
     void testGetFields() {
         ListOptions options = new ListOptions();
         options.fields = "a,b";
-        assertEquals(Set.of("a", "b"), options.getFields());
+        assertEquals(new HashSet<>(Arrays.asList("a", "b")), options.getFields());
     }
 
     @Test

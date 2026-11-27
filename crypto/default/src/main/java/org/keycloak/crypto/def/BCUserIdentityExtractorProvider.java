@@ -150,7 +150,7 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
 
                             // From Java 21, the 3rd entry can be present with the type-id as String and 4th entry with the value (either in String or byte format).
                             // See javadoc of X509Certificate.getSubjectAlternativeNames in Java 21. For the sake of simplicity, we just ignore those additional String entries and
-                            // always parse it from byte (2nd entry) as we still need to support Java 17 and it is not reliable anyway that entries are present in Java 21.
+                            // always parse it from byte (2nd entry) as it is not reliable that entries are present in Java 21.
                             if (obj instanceof byte[]) {
                                 byte[] otherNameBytes = (byte[]) obj;
 

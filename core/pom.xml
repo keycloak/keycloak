@@ -32,9 +32,9 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <maven.compiler.release>8</maven.compiler.release>
+        <maven.compiler.source>${java.adapter.minimum.version}</maven.compiler.source>
+        <maven.compiler.target>${java.adapter.minimum.version}</maven.compiler.target>
+        <maven.compiler.release>${java.adapter.minimum.version}</maven.compiler.release>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
     </properties>

@@ -3,11 +3,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <!-- this property prevents the warning "WARN FilenoUtil: Native subprocess control requires open access" when using JRuby for the unit tests on JDK17 -->
-        <surefire.system.args>
-            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-            --add-opens java.base/java.io=ALL-UNNAMED
-        </surefire.system.args>
         <version.jsoup>1.23.2</version.jsoup>
     </properties>
 

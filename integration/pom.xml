@@ -30,6 +30,12 @@
     <artifactId>keycloak-integration-parent</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.compiler.source>${java.adapter.minimum.version}</maven.compiler.source>
+        <maven.compiler.target>${java.adapter.minimum.version}</maven.compiler.target>
+        <maven.compiler.release>${java.adapter.minimum.version}</maven.compiler.release>
+    </properties>
+
     <modules>
         <module>admin-client-core</module>
         <module>admin-client</module>

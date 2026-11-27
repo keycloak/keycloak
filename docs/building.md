@@ -1,6 +1,6 @@
 ## Building from source
 
-Ensure you have **JDK 17**, **JDK 21** or **JDK 25** and Git installed
+Ensure you have **JDK 21** or **JDK 25** and Git installed
 
     java -version
     git --version

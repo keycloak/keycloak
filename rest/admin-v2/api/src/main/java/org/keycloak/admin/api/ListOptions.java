@@ -1,7 +1,8 @@
 package org.keycloak.admin.api;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -61,9 +62,9 @@ public class ListOptions {
             return null;
         }
         if (fields.isEmpty()) {
-            return Set.of();
+            return Collections.emptySet();
         }
-        return new LinkedHashSet<>(List.of(fields.split(",")));
+        return new LinkedHashSet<>(Arrays.asList(fields.split(",")));
     }
 
     public void setFields(Set<String> fields) {

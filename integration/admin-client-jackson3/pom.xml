@@ -16,7 +16,9 @@
     </description>
 
     <properties>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>${java.adapter.jackson3.minimum.version}</maven.compiler.source>
+        <maven.compiler.target>${java.adapter.jackson3.minimum.version}</maven.compiler.target>
+        <maven.compiler.release>${java.adapter.jackson3.minimum.version}</maven.compiler.release>
         <version.resteasy.jackson.provider>1.0.0.Final</version.resteasy.jackson.provider>
     </properties>
 

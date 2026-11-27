@@ -19,9 +19,9 @@
         For the use by 3rd party applications, please use `org.keycloak:keycloak-authz-client` module.</description>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <maven.compiler.release>8</maven.compiler.release>
+        <maven.compiler.source>${java.adapter.minimum.version}</maven.compiler.source>
+        <maven.compiler.target>${java.adapter.minimum.version}</maven.compiler.target>
+        <maven.compiler.release>${java.adapter.minimum.version}</maven.compiler.release>
     </properties>
 
     <dependencies>
