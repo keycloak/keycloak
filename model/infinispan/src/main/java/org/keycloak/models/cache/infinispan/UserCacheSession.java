@@ -391,9 +391,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         CachedUser cached = cache.get(userId, CachedUser.class);
         if (cached == null) {
             return cacheUser(realm, delegate, loaded);
-        } else {
-            return validateCache(realm, cached, () -> getDelegate().getUserById(realm, userId));
         }
+        if (!realm.getId().equals(cached.getRealm())) {
+            // the shared cache holds an entry for this id under a different realm; the delegate already resolved
+            // the user for the requested realm, so return it rather than losing it to validateCache's realm check
+            return delegate;
+        }
+        return validateCache(realm, cached, () -> getDelegate().getUserById(realm, userId));
     }
 
     protected UserModel validateCache(RealmModel realm, CachedUser cached, Supplier<UserModel> supplier) {
