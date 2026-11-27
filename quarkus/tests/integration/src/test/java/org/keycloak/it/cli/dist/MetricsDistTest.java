@@ -83,6 +83,10 @@ public class MetricsDistTest {
                 .body(containsString("TYPE jvm_gc_pause_seconds summary"))
                 .body(containsString("TYPE jvm_gc_overhead gauge"))
 
+                // Keycloak metrics
+                .body(containsString("TYPE keycloak_build_info gauge"))
+                .body(containsString("keycloak_build_info{version=\""))
+
                 // Database metrics
                 .body(containsString("TYPE agroal_available_count gauge"))
                 .body(containsString("TYPE agroal_active_count gauge"))
