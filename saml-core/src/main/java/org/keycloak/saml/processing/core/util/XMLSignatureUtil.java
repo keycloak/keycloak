@@ -774,7 +774,7 @@ public class XMLSignatureUtil {
     private static void signImpl(DOMSignContext dsc, String digestMethod, String signatureMethod, String referenceURI, String keyName, PublicKey publicKey,
                                  X509Certificate x509Certificate, String canonicalizationMethodType)
             throws GeneralSecurityException, MarshalException, XMLSignatureException {
-        dsc.setDefaultNamespacePrefix("dsig");
+        dsc.setDefaultNamespacePrefix(WSTrustConstants.XMLDSig.DSIG_PREFIX);
 
         DigestMethod digestMethodObj = fac.newDigestMethod(digestMethod, null);
         Transform transform1 = fac.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null);
