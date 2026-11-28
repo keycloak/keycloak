@@ -124,8 +124,10 @@ public class FilterUtils {
     }
 
     /**
-     * Unescapes a JSON string value (without surrounding quotes) per RFC 8259.
-     * Unicode escape sequences are handled by the ANTLR lexer.
+     * Unescapes a JSON string value (without surrounding quotes) per RFC 8259,
+     * including {@code \\uXXXX} Unicode escape sequences. The ANTLR lexer only
+     * recognizes these escapes; it does not decode them, so {@code getText()}
+     * returns them verbatim and they must be decoded here like every other escape.
      */
     public static String unescapeJsonString(String s) {
         if (s.indexOf('\\') == -1) {
@@ -145,6 +147,17 @@ public class FilterUtils {
                     case 'n'  -> sb.append('\n');
                     case 'r'  -> sb.append('\r');
                     case 't'  -> sb.append('\t');
+                    case 'u'  -> {
+                        if (isHexEscape(s, i + 1)) {
+                            // a single UTF-16 code unit; surrogate pairs arrive as two escapes
+                            char codeUnit = (char) Integer.parseInt(s, i + 1, i + 5, 16);
+                            sb.append(codeUnit);
+                            i += 4;
+                        } else {
+                            // not four hex digits - leave the escape literal
+                            sb.append('\\').append(next);
+                        }
+                    }
                     default   -> sb.append('\\').append(next);
                 }
             } else {
@@ -152,5 +165,25 @@ public class FilterUtils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Returns whether the four characters starting at {@code start} are all ASCII
+     * hex digits ({@code [0-9A-Fa-f]}), as required by RFC 8259 for {@code \\uXXXX}.
+     * {@link Integer#parseInt} alone is more permissive (it accepts a leading sign
+     * and non-ASCII Unicode digits), so it must not be relied on for validation.
+     */
+    private static boolean isHexEscape(String s, int start) {
+        if (start + 4 > s.length()) {
+            return false;
+        }
+        for (int j = start; j < start + 4; j++) {
+            char h = s.charAt(j);
+            boolean hex = (h >= '0' && h <= '9') || (h >= 'a' && h <= 'f') || (h >= 'A' && h <= 'F');
+            if (!hex) {
+                return false;
+            }
+        }
+        return true;
     }
 }

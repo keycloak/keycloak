@@ -171,6 +171,29 @@ public class FilterUtilsTest {
     }
 
     @Test
+    public void testUnescapeUnicodeEscape() {
+        // \\uXXXX escapes are only recognized - not decoded - by the ANTLR lexer, so
+        // unescapeJsonString must decode them like every other JSON escape.
+        assertEquals("A", FilterUtils.unescapeJsonString("\\u0041"));
+        assertEquals("ABC", FilterUtils.unescapeJsonString("\\u0041BC"));
+        assertEquals("caf\u00e9", FilterUtils.unescapeJsonString("caf\\u00e9"));
+        // interleaved with other escapes
+        assertEquals("A\tB", FilterUtils.unescapeJsonString("\\u0041\\t\\u0042"));
+        // a malformed \\u (too few hex digits) is left literal rather than throwing
+        assertEquals("\\u12", FilterUtils.unescapeJsonString("\\u12"));
+        // hex digits are case-insensitive
+        assertEquals("\u00e9\u00E9", FilterUtils.unescapeJsonString("\\u00e9\\u00E9"));
+        // only ASCII hex digits are accepted, unlike Integer.parseInt which also takes
+        // a leading sign or non-ASCII Unicode digits - such escapes are left literal
+        assertEquals("\\u+041", FilterUtils.unescapeJsonString("\\u+041"));
+        assertEquals("\\u-041", FilterUtils.unescapeJsonString("\\u-041"));
+        assertEquals("\\u\u0660\u0660\u0664\u0661", FilterUtils.unescapeJsonString("\\u\u0660\u0660\u0664\u0661"));
+        assertEquals("\\u004G", FilterUtils.unescapeJsonString("\\u004G"));
+        // end-to-end: a filter comparison value carrying a \\uXXXX escape
+        assertDoesNotThrow(() -> FilterUtils.parseFilter("userName eq \"\\u0041\""));
+    }
+
+    @Test
     public void testInvalidSyntax() {
         // Missing value
         ScimFilterException e1 = assertThrows(ScimFilterException.class,
