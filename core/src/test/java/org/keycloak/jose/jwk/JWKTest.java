@@ -47,7 +47,9 @@ import static org.keycloak.common.util.CertificateUtils.generateV3Certificate;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -279,6 +281,31 @@ public abstract class JWKTest {
         assertNotNull(pub);
         assertTrue(pub.getAlgorithm().startsWith("EC"));
         assertEquals("X.509", pub.getFormat());
+    }
+
+    @Test
+    public void toPublicKeyEcMissingCoordinate() {
+        // An EC JWK missing the "x" or "y" coordinate must fail with the explicit
+        // "Fail to retrieve ..." error, not a NullPointerException. Before the fix the
+        // x/y fields were read with get() (which returns null for a missing key) instead
+        // of path() (a non-null MissingNode, as crv and the RSA path already use), so a
+        // missing coordinate dereferenced null and threw NPE before the null-guard - which
+        // explicitly lists X and Y as nullable - could ever run.
+        String x = "\"x\": \"usWxHK2PmfnHKwXPS54m0kTcGJ90UiglWiGahtagnv8\"";
+        String y = "\"y\": \"IBOL-C3BttVivg-lSreASjpkttcsz-1rb7btKLv8EX4\"";
+
+        assertMissingEcCoordinateFails(y); // missing "x"
+        assertMissingEcCoordinateFails(x); // missing "y"
+    }
+
+    private void assertMissingEcCoordinateFails(String presentCoordinate) {
+        String jwkJson = "{ \"kty\": \"EC\", \"crv\": \"P-256\", " + presentCoordinate + " }";
+        JWKParser sut = JWKParser.create().parse(jwkJson);
+
+        RuntimeException e = assertThrows(RuntimeException.class, sut::toPublicKey);
+        assertFalse("Missing EC coordinate must not surface as NullPointerException: " + e,
+                e instanceof NullPointerException);
+        assertEquals("Fail to retrieve ECPublicJWK.CRV, ECPublicJWK.X or ECPublicJWK.Y field.", e.getMessage());
     }
 
     private byte[] sign(byte[] data, String javaAlgorithm, PrivateKey key) throws Exception {
