@@ -217,6 +217,27 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
     }
 
     @Test
+    public void testReplayTokenIssuedAheadOfServerClock() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ALLOWED_CLOCK_SKEW, "10");
+            rep.getConfig().put(OIDCIdentityProviderConfig.ALLOWED_CLOCK_SKEW, "10");
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
+        });
+
+        // iat ahead of the server clock (within the allowed skew) keeps the assertion valid until iat + max expiration
+        long now = Time.currentTime();
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, now + 60L, now + 8L));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+
+        // later than first use + max expiration, but still before iat + max expiration
+        timeOffSet.enableForCaches();
+        timeOffSet.set(13);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Token reuse detected", response, events.poll());
+    }
+
+    @Test
     public void testSignatureAlg() {
         realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES256);
