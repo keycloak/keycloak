@@ -99,6 +99,20 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
+        return fromClientSessionAndScopeParameter(clientSession, scopeParam, session, null);
+    }
+
+    /**
+     * Builds a context for the given client session and inherits the attributes already set on {@code attributeSource}.
+     * <p>
+     * This is meant for the case where the very same request has to be re-bound to another client session - a refresh
+     * of an offline token is bound to the offline client session while the request attributes were computed for the
+     * online one. Attributes are about the request, not about the client session, so rebuilding the context without
+     * them silently hides the grant type, the requested resource or the requested audience from the token post
+     * processors and protocol mappers that run afterwards.
+     */
+    public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam,
+            KeycloakSession session, ClientSessionContext attributeSource) {
         UserSessionModel userSession = clientSession.getUserSession();
         UserModel user = Optional.ofNullable(userSession).map(UserSessionModel::getUser).orElse(null);
         Set<ClientScopeModel> requestedScopes;
@@ -108,7 +122,11 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         } else {
             requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user).collect(Collectors.toSet());
         }
-        return new DefaultClientSessionContext(clientSession, requestedScopes, null, scopeParam, session);
+        DefaultClientSessionContext context = new DefaultClientSessionContext(clientSession, requestedScopes, null, scopeParam, session);
+        if (attributeSource instanceof DefaultClientSessionContext source) {
+            context.attributes.putAll(source.attributes);
+        }
+        return context;
     }
 
 

@@ -1351,7 +1351,12 @@ public class TokenManager {
             Object reuseId = oldRefreshToken.getOtherClaims().get(Constants.REUSE_ID);
             boolean offlineTokenRequested = Arrays.asList(scope.split(" ")).contains(OAuth2Constants.OFFLINE_ACCESS) ;
             if (offlineTokenRequested) {
-                clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scope, session);
+                // The offline token is bound to a different client session, so the request scoped context has to be
+                // rebuilt for it. The attributes it carries describe the request (grant type, requested resource,
+                // original refresh token scope, requested audience, nonce) and not the client session, so they are
+                // inherited from the context of the incoming request. Losing them here breaks every token post
+                // processor that reads one, for example the resource indicator one.
+                clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scope, session, clientSessionCtx);
                 if (oldRefreshToken.getNonce() != null) {
                     clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldRefreshToken.getNonce());
                 }
