@@ -240,7 +240,8 @@ public class TokenExchangeDelegationTest {
         String actorToken = getActorToken();
         AccessTokenResponse tokenExchangeRes = oauth.client("test-app", "test-secret").tokenExchangeRequest(res.getAccessToken())
                 .actorToken(actorToken).actorTokenType(OAuth2Constants.ACCESS_TOKEN_TYPE).send();
-        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN, "Invalid may_act claim in the subject_token");
+        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN,
+                "The subject_token carries no may_act claim, so the user did not consent to this delegation");
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
@@ -284,7 +285,8 @@ public class TokenExchangeDelegationTest {
         String actorToken = getActorToken();
         AccessTokenResponse tokenExchangeRes = oauth.client("test-app", "test-secret").tokenExchangeRequest(res.getAccessToken())
                 .actorToken(actorToken).actorTokenType(OAuth2Constants.ACCESS_TOKEN_TYPE).send();
-        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN, "Invalid may_act claim in the subject_token");
+        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN,
+                "The subject_token carries no may_act claim, so the user did not consent to this delegation");
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
@@ -808,7 +810,8 @@ public class TokenExchangeDelegationTest {
         String actorToken = getActorToken();
         AccessTokenResponse tokenExchangeRes = oauth.client("test-app", "test-secret").tokenExchangeRequest(res.getAccessToken())
                 .actorToken(actorToken).actorTokenType(OAuth2Constants.ACCESS_TOKEN_TYPE).send();
-        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN, "Invalid may_act claim in the subject_token");
+        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN,
+                "The subject_token carries no may_act claim, so the user did not consent to this delegation");
 
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
