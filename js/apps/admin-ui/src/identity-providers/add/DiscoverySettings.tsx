@@ -36,6 +36,16 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
     control,
     name: "config.supportsClientAssertions",
   });
+  const clientAuthMethod = useWatch({
+    control,
+    name: "config.clientAuthMethod",
+  });
+  // RFC 8705 mtls_endpoint_aliases are preferred over the regular endpoints for tls_client_auth
+  // backchannel calls (selectEndpointForClientAuth on the server), so when they are set the regular
+  // URL fields above no longer determine where the client certificate is sent. Surface them as
+  // editable fields for tls_client_auth so an administrator can see and change the effective
+  // destinations instead of silently editing a URL that is overridden by a hidden imported alias.
+  const isTlsClientAuth = clientAuthMethod === "tls_client_auth";
 
   return (
     <div className="pf-v5-c-form pf-m-horizontal">
@@ -78,6 +88,31 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
         type="url"
         readOnly={readOnly}
       />
+      {isTlsClientAuth && (
+        <>
+          <TextControl
+            name="config.mtlsTokenUrl"
+            label={t("mtlsTokenUrl")}
+            labelIcon={t("mtlsEndpointAliasesHelp")}
+            type="url"
+            readOnly={readOnly}
+          />
+          <TextControl
+            name="config.mtlsUserInfoUrl"
+            label={t("mtlsUserInfoUrl")}
+            labelIcon={t("mtlsEndpointAliasesHelp")}
+            type="url"
+            readOnly={readOnly}
+          />
+          <TextControl
+            name="config.mtlsTokenIntrospectionUrl"
+            label={t("mtlsTokenIntrospectionUrl")}
+            labelIcon={t("mtlsEndpointAliasesHelp")}
+            type="url"
+            readOnly={readOnly}
+          />
+        </>
+      )}
       {isOIDC && (
         <TextControl
           name="config.issuer"
