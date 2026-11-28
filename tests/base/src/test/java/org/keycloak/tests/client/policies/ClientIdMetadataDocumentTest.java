@@ -1580,6 +1580,15 @@ public class ClientIdMetadataDocumentTest {
             cimd.getRepresentation().setBackchannelLogoutUri(null);
             cimd.getRepresentation().setBackchannelClientNotificationEndpoint("https://www.example.com/ciba-notification");
             assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint(null);
+            cimd.getRepresentation().setSectorIdentifierUri("https://www.example.com/sector");
+            assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+            cimd.getRepresentation().setSectorIdentifierUri(null);
+
+            cimd.getRepresentation().setRequestUris(List.of("https://www.example.com/request"));
+            assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+            cimd.getRepresentation().setRequestUris(null);
         } finally {
             realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
         }
