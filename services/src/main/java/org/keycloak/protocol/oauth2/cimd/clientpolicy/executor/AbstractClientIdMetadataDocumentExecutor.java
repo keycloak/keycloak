@@ -750,6 +750,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // authorization server after the registration
         // OIDC Back-Channel Logout (optional): backchannel_logout_uri, CIBA (optional): backchannel_client_notification_endpoint,
         // which the authorization server sends a request to after the registration
+        // OIDC Front-Channel Logout (optional): frontchannel_logout_uri
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -772,6 +773,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         verifyRequestedUriProperty(clientOIDC.getBackchannelLogoutUri(), "backchannel_logout_uri", trustedDomains);
         verifyRequestedUriProperty(clientOIDC.getBackchannelClientNotificationEndpoint(), "backchannel_client_notification_endpoint", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getFrontChannelLogoutUri(), "frontchannel_logout_uri", trustedDomains);
 
         URI clientIdURIfromMetadata;
         try {
@@ -950,7 +952,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // between the redirect_uris and the client_id or client_uri properties
 
         // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri,
-        // backchannel_logout_uri, backchannel_client_notification_endpoint
+        // backchannel_logout_uri, backchannel_client_notification_endpoint, frontchannel_logout_uri
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
@@ -963,7 +965,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             }
 
             List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(),
-                            clientOIDC.getBackchannelLogoutUri(), clientOIDC.getBackchannelClientNotificationEndpoint())
+                            clientOIDC.getBackchannelLogoutUri(), clientOIDC.getBackchannelClientNotificationEndpoint(), clientOIDC.getFrontChannelLogoutUri())
                     .filter(StringUtil::isNotBlank).toList();
             validateSameDomain(l, redirectUriURI, trustedDomains);
         }

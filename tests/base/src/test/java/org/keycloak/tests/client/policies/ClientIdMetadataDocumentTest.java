@@ -1195,6 +1195,10 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setRequestUris(List.of("https://request.example.org/request"));
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
         cimd.getRepresentation().setRequestUris(null);
+
+        cimd.getRepresentation().setFrontChannelLogoutUri("https://frontchannel.example.org/logout");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        cimd.getRepresentation().setFrontChannelLogoutUri(null);
     }
 
     @Test
@@ -1580,6 +1584,11 @@ public class ClientIdMetadataDocumentTest {
             cimd.getRepresentation().setBackchannelLogoutUri(null);
             cimd.getRepresentation().setBackchannelClientNotificationEndpoint("https://www.example.com/ciba-notification");
             assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint(null);
+            cimd.getRepresentation().setFrontChannelLogoutUri("https://www.example.com/logout");
+            assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+            cimd.getRepresentation().setFrontChannelLogoutUri(null);
         } finally {
             realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
         }
